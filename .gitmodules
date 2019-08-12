@@ -1,0 +1,3 @@
+[submodule "external/gym-tictactoe"]
+	path = external/gym-tictactoe
+	url = https://github.com/haje01/gym-tictactoe
