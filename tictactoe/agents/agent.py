@@ -5,5 +5,5 @@ from abc import ABC, abstractmethod
 class Agent:
 
     @abstractmethod
-    def act(self, state, available_actions):
+    def act(self, board_state):
         pass
