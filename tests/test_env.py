@@ -42,3 +42,59 @@ def test_check_game_status():
 
     board = ['O', 'X', 'O', 'O', 'X', 'X', 'X', 'O', 'O']
     assert env.check_game_status(board) == env.Status.DRAW
+
+def test_step():
+    tictactoe = env.TicTacToeEnv()
+    assert tictactoe.board == [None] * 9
+    assert tictactoe.mark == 'X'
+    assert tictactoe.done == False
+    assert tictactoe.learning_rate == 0.5
+    assert tictactoe.size == 9
+    assert tictactoe.info == {}
+    
+    action = 0
+    board = ['X'] + [None] * 8
+    obs, reward, done, info = tictactoe.step(action)
+    assert tictactoe.board == board
+    assert tictactoe.mark == 'O'
+    assert tictactoe.done == False
+
+    action = 1
+    board[action] = 'O'
+    obs, reward, done, info = tictactoe.step(action)
+    assert tictactoe.board == board
+    assert tictactoe.mark == 'X'
+    assert tictactoe.done == False
+    assert reward == 0
+
+    action = 3
+    board[action] = 'X'
+    obs, reward, done, info = tictactoe.step(action)
+    assert tictactoe.board == board
+    assert tictactoe.mark == 'O'
+    assert tictactoe.done == False
+    assert reward == 0
+
+    action = 2
+    board[action] = 'O'
+    obs, reward, done, info = tictactoe.step(action)
+    assert tictactoe.board == board
+    assert tictactoe.mark == 'X'
+    assert tictactoe.done == False
+    assert reward == 0
+
+    action = 6
+    board[action] = 'X'
+    obs, reward, done, info = tictactoe.step(action)
+    assert tictactoe.board == board
+    assert tictactoe.mark == 'O'
+    assert tictactoe.done == True
+    assert reward == 1
+
+    tictactoe.reset()
+    assert tictactoe.board == [None] * 9
+    assert tictactoe.mark == 'X'
+    assert tictactoe.done == False
+    assert tictactoe.learning_rate == 0.5
+    assert tictactoe.size == 9
+    assert tictactoe.info == {}
