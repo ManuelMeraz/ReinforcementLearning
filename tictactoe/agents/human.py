@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 
 from tictactoe.utils import logging_utils
+from .agent import Agent
 import logging
 import sys
 
 
-class Human(object):
+class Human(Agent):
     def __init__(self, mark):
         self.mark = mark
 
     @logging_utils.logged
     def act(self, board_state):
-        available_actions = []
-        for action, slot in enumerate(board_state):
-            if slot is None:
-                available_actions.append(action)
+        available_actions = super().available_actions(board_state)
 
         while True:
             user_input = input("Enter move[1-9]: ")

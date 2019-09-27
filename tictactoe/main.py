@@ -16,10 +16,10 @@ states = defaultdict(State)
 
 
 def play():
-    env = TicTacToeEnv()
+    env = TicTacToeEnv(show_number=True)
     obs = env.reset()
 
-    players = {"X": agents.Human("X"), "O": agents.Human("O")}
+    players = {"X": agents.Human("X"), "O": agents.Base("O")}
 
     while True:
         env.render(human=True)
