@@ -2,7 +2,7 @@
 from collections import defaultdict
 
 from tictactoe import agents
-from tictactoe.env import TicTacToeEnv, Status
+from tictactoe.env import Status, TicTacToeEnv
 from tictactoe.utils import logging_utils
 
 
@@ -12,14 +12,22 @@ class State:
         self.count = 0
 
 
-states = defaultdict(State)
+state_values = defaultdict(State)
 
 
 def play():
     env = TicTacToeEnv(show_number=True)
     obs = env.reset()
 
-    players = {"X": agents.Human("X"), "O": agents.Base("O")}
+    players = {
+        "X":
+        agents.Human("X"),
+        "O":
+        agents.TemporalDifference("O",
+                                  exploratory_rate=0.1,
+                                  learning_rate=0.5,
+                                  state_values=state_values),
+    }
 
     while True:
         env.render(human=True)
