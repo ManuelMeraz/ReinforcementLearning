@@ -10,10 +10,10 @@ with open(REQUIREMENTS) as f:
     reqs = f.read()
 
 setuptools.setup(
-    name="TicTacToe",
+    name="tictactoe",
     version="0.0.1",
-    description="Reinforcement Learning TicTacToe with temporal difference",
-    url="github.com/manuelmeraz/TicTacToe",
+    description="Reinforcement Learning tictactoe with temporal difference",
+    url="github.com/manuelmeraz/tictactoe",
     author="Manuel Meraz-Rodriguez",
     license="MIT",
     packages=setuptools.find_packages(),
