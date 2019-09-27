@@ -8,9 +8,8 @@ from .agent import Agent
 
 
 class TemporalDifference(Agent):
-    def __init__(self, mark, exploratory_rate, learning_rate, state_values):
+    def __init__(self, exploratory_rate, learning_rate, state_values):
         self.state_values = state_values
-        self.mark = mark
         self.learning_rate = learning_rate
         self.exploratory_rate = exploratory_rate
 

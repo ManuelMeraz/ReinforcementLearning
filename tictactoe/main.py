@@ -21,10 +21,11 @@ def play():
 
     players = {
         "X":
-        agents.Human("X"),
+        agents.TemporalDifference(exploratory_rate=0.1,
+                                  learning_rate=0.5,
+                                  state_values=state_values),
         "O":
-        agents.TemporalDifference("O",
-                                  exploratory_rate=0.1,
+        agents.TemporalDifference(exploratory_rate=0.1,
                                   learning_rate=0.5,
                                   state_values=state_values),
     }

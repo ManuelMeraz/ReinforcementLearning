@@ -7,10 +7,6 @@ import sys
 
 
 class Human(Agent):
-    def __init__(self, mark):
-        self.mark = mark
-
-    @logging_utils.logged
     def act(self, board_state):
         available_actions = super().available_actions(board_state)
 

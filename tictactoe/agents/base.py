@@ -7,9 +7,6 @@ import random
 
 
 class Base(Agent):
-    def __init__(self, mark):
-        self.mark = mark
-
     def act(self, board_state):
         available_actions = super().available_actions(board_state)
 
