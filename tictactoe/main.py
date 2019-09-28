@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
-from collections import defaultdict
-
 from tictactoe import agents
 from tictactoe.env import Status, TicTacToeEnv
 from tictactoe.utils import logging_utils
-
-
-class State:
-    def __init__(self):
-        self.value = 0
-        self.count = 0
-
-
-state_values = defaultdict(State)
 
 
 def play():
@@ -20,24 +9,26 @@ def play():
     obs = env.reset()
 
     players = {
-        "X":
-        agents.TemporalDifference(exploratory_rate=0.1,
-                                  learning_rate=0.5,
-                                  state_values=state_values),
-        "O":
-        agents.TemporalDifference(exploratory_rate=0.1,
-                                  learning_rate=0.5,
-                                  state_values=state_values),
+        "X": agents.TemporalDifference(exploratory_rate=0.1,
+                                       learning_rate=0.5),
+        "O": agents.TemporalDifference(exploratory_rate=0.1,
+                                       learning_rate=0.5),
     }
 
-    while True:
-        env.render(human=True)
+    num_games = 2
+    completed_games = 0
+    while completed_games < num_games:
+        # env.render()
+        current_player = players[obs[-1]]
+        action = current_player.act(obs)
 
-        action = players[obs["current_turn"]].act(obs["board"])
+        prev_obs = obs
         obs, reward, done, info = env.step(action)
+        current_player.learn(state=obs, previous_state=prev_obs, reward=reward)
 
         if done:
-            status = obs["status"]
+            completed_games += 1
+            status = info["status"]
 
             if status == Status.DRAW:
                 print("The game was a draw!")

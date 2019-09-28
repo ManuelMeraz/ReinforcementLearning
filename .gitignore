@@ -4,3 +4,6 @@
 
 *.swp
 .idea
+
+# ignore policy files
+*.csv

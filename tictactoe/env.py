@@ -58,8 +58,8 @@ class TicTacToeEnv(gym.Env):
         self.observation_space = gym.spaces.Discrete(self.size)
         self.learning_rate = learning_rate
         self.start_mark = "X"
-        self.info = {}
         self.status = Status.IN_PROGRESS
+        self.info = {"status": self.status}
 
         # Display numbers on the board for humans
         self.show_number = show_number
@@ -96,6 +96,7 @@ class TicTacToeEnv(gym.Env):
         reward = 0
         self.board[action] = self.mark
         self.status = check_game_status(self.board)
+        self.info["status"] = self.status
 
         if self.status != Status.IN_PROGRESS:
             self.done = True
@@ -107,11 +108,7 @@ class TicTacToeEnv(gym.Env):
         return self.observation(), reward, self.done, self.info
 
     def observation(self):
-        return {
-            "board": self.board,
-            "current_turn": self.mark,
-            "status": self.status
-        }
+        return tuple(self.board) + (self.mark,)
 
     def available_actions(self):
         return [i for i, c in enumerate(self.board) if c == 0]

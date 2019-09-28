@@ -1,16 +1,18 @@
 #! /usr/bin/env python3
 
 from abc import ABC, abstractmethod
+from typing import List, Tuple
 
 
 class Agent:
     @abstractmethod
-    def act(self, board_state):
+    def act(self, state):
         pass
 
-    def available_actions(self, board_state):
+    @staticmethod
+    def available_actions(state: Tuple) -> List[int]:
         actions = []
-        for action, slot in enumerate(board_state):
+        for action, slot in enumerate(state):
             if slot is None:
                 actions.append(action)
         return actions
