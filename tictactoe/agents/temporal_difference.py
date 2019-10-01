@@ -69,8 +69,8 @@ class TemporalDifference(Agent):
         Apply temporal difference learning
         """
         self.state_values[state].value += self.learning_rate * (
-            reward -
-            self.state_values[previous_state].value)
+                reward -
+                self.state_values[previous_state].value)
 
         self.state_values[state].count += 1
 

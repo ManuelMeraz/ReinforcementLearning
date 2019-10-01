@@ -1,3 +1,4 @@
+from env import Status
 from tictactoe import env
 
 
@@ -51,8 +52,8 @@ def test_step():
     assert tictactoe.mark == "X"
     assert tictactoe.done is False
     assert tictactoe.learning_rate == 0.5
-    assert tictactoe.size == 9
-    assert tictactoe.info == {}
+    assert tictactoe.board_size == 9
+    assert tictactoe.info["status"].value == Status.IN_PROGRESS.value
 
     action = 0
     board = ["X"] + [None] * 8
@@ -98,5 +99,5 @@ def test_step():
     assert tictactoe.mark == "X"
     assert tictactoe.done is False
     assert tictactoe.learning_rate == 0.5
-    assert tictactoe.size == 9
-    assert tictactoe.info == {}
+    assert tictactoe.board_size == 9
+    assert tictactoe.info["status"].value == Status.X_WINS.value

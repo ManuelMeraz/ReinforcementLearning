@@ -2,10 +2,13 @@
 import enum
 import logging
 import pprint
+from typing import Tuple, List, TypeVar
 
 import gym
 
 from tictactoe.utils import logging_utils
+
+Mark = TypeVar('Mark', str, None)
 
 
 class Status(enum.Enum):
@@ -15,13 +18,11 @@ class Status(enum.Enum):
     DRAW = 3
 
 
-def check_game_status(board):
+def check_game_status(board: List[Mark]) -> Status:
     """
     Return game status by current board status.
 
-    :param board: Current board state
-    :type board: list
-
+    :param board: Current board state. ['X', 'O', or None]
     :returns: Status
     """
 
@@ -48,14 +49,19 @@ def check_game_status(board):
 
 
 class TicTacToeEnv(gym.Env):
-    def __init__(self, learning_rate=0.5, show_number=False):
-        self.size = 9
+    def __init__(self, learning_rate: float = 0.5, show_number: bool = False):
+        """
+        Represents an OpenAI Tic Tac Toe environment
+        :param learning_rate: The learning rate, or alpha, for the egreedy learning algorithm
+        :param show_number: Display numbers on the tic tac toe board
+        """
+        self.board_size = 9
 
         # Each location on the board represents an action
-        self.action_space = gym.spaces.Discrete(self.size)
+        self.action_space = gym.spaces.Discrete(self.board_size)
 
         # Each location on the board is part of the observation space
-        self.observation_space = gym.spaces.Discrete(self.size)
+        self.observation_space = gym.spaces.Discrete(self.board_size)
         self.learning_rate = learning_rate
         self.start_mark = "X"
         self.status = Status.IN_PROGRESS
@@ -63,35 +69,32 @@ class TicTacToeEnv(gym.Env):
 
         # Display numbers on the board for humans
         self.show_number = show_number
-        self.board = [None] * self.size
+        self.board = [None] * self.board_size
         self.mark = self.start_mark
         self.done = False
 
-        # set numpy random seet
+        # set numpy random seed
         self.seed()
 
     @logging_utils.logged
-    def reset(self):
-        self.board = [None] * self.size
+    def reset(self) -> Tuple[Mark]:
+        """
+        Reset the environment to it's initial state.
+        :return: The initial state of the environment.
+        """
+        self.board = [None] * self.board_size
         self.mark = self.start_mark
         self.done = False
-        return self.observation()
+        return self.observation
 
     @logging_utils.logged
-    def step(self, action):
-        """Step environment by action.
-
-        :param action: The location on the board to mark with an 'X' or 'O'
-        :param type: int
-
-        :returns:
-            list: Obeservation
-            int: Reward
-            bool: Done
-            dict: Additional information
+    def step(self, action: int) -> Tuple[Tuple, int, bool, dict]:
         """
-        assert self.action_space.contains(
-            action), f"Action not available in action space:  {action}"
+        Step environment by action.
+        :param action: The location on the board to mark with an 'X' or 'O'
+        :returns: Observation, Reward, Done, Info
+        """
+        assert self.action_space.contains(action), f"Action not available in action space: {action}"
 
         reward = 0
         self.board[action] = self.mark
@@ -105,18 +108,23 @@ class TicTacToeEnv(gym.Env):
         if not self.done:
             self.mark = "X" if self.mark == "O" else "O"
 
-        return self.observation(), reward, self.done, self.info
+        return self.observation, reward, self.done, self.info
 
-    def observation(self):
+    @property
+    def observation(self) -> Tuple:
+        """
+        The state of this environment is the board along with the current player's turn.
+        The first 9 elements are the state of the board in row major order, and the last
+        element is the current player's turn.
+        :return: The state of the game.
+        """
         return tuple(self.board) + (self.mark,)
 
-    def available_actions(self):
-        return [i for i, c in enumerate(self.board) if c == 0]
-
-    def render(self, human=False):
+    def render(self, human: bool = False):
         """
         Draw tictactoe board
         TODO: Clean this garbage up
+        :param human: Displays numbers on the board for humans to make a decision
         """
         board_string = ""
         for j in range(0, 9, 3):

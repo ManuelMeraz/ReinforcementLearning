@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
+from typing import Dict
+
+from agents import Human
 from tictactoe import agents
-from tictactoe.env import Status, TicTacToeEnv
+from tictactoe.env import TicTacToeEnv, Status
 from tictactoe.utils import logging_utils
 
 
 def play():
     env = TicTacToeEnv(show_number=True)
-    obs = env.reset()
+    obs: tuple = env.reset()
 
-    players = {
-        "X": agents.TemporalDifference(exploratory_rate=0.1,
-                                       learning_rate=0.5),
-        "O": agents.TemporalDifference(exploratory_rate=0.1,
-                                       learning_rate=0.5),
+    players: Dict[str, Human] = {
+        "X": agents.Human(),
+        "O": agents.Human(),
     }
 
-    num_games = 2
-    completed_games = 0
+    num_games: int = 10
+    completed_games: int = 0
     while completed_games < num_games:
-        # env.render()
-        current_player = players[obs[-1]]
-        action = current_player.act(obs)
+        env.render(human=True)
+        current_player: Human = players[obs[-1]]
+        action: int = current_player.act(obs)
 
         prev_obs = obs
         obs, reward, done, info = env.step(action)
-        current_player.learn(state=obs, previous_state=prev_obs, reward=reward)
+        # current_player.learn(state=obs, previous_state=prev_obs, reward=reward)
 
         if done:
             completed_games += 1
-            status = info["status"]
+            status: Status = info["status"]
 
             if status == Status.DRAW:
                 print("The game was a draw!")
