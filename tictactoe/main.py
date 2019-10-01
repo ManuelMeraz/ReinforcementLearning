@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-from typing import Dict
+from typing import Dict, Tuple
 
 from agents import Human
 from tictactoe import agents
-from tictactoe.env import TicTacToeEnv, Status
-from tictactoe.utils import logging_utils
+from tictactoe.env import TicTacToeEnv, Status, Mark
+from utils.logging_utils import Logger
 
 
 def play():
-    env = TicTacToeEnv(show_number=True)
+    env: TicTacToeEnv = TicTacToeEnv(show_number=True)
     obs: tuple = env.reset()
 
     players: Dict[str, Human] = {
@@ -19,11 +19,16 @@ def play():
     num_games: int = 10
     completed_games: int = 0
     while completed_games < num_games:
-        env.render(human=True)
+        env.render(mode='human')
         current_player: Human = players[obs[-1]]
         action: int = current_player.act(obs)
 
         prev_obs = obs
+
+        obs: Tuple[Mark]
+        reward: int
+        done: bool
+        info: dict
         obs, reward, done, info = env.step(action)
         # current_player.learn(state=obs, previous_state=prev_obs, reward=reward)
 
@@ -37,13 +42,13 @@ def play():
                 winner = {Status.O_WINS: "O", Status.X_WINS: "X"}
                 print(f"The winner is {winner[status]}!")
 
-            env.render(human=True)
+            env.render(mode='human')
             obs = env.reset()
             print("Playing new game.")
 
 
 def main():
-    logger = logging_utils.Logger()
+    logger: Logger = Logger()
     play()
 
 

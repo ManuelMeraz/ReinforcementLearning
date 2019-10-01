@@ -49,29 +49,31 @@ def check_game_status(board: List[Mark]) -> Status:
 
 
 class TicTacToeEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
+
     def __init__(self, learning_rate: float = 0.5, show_number: bool = False):
         """
         Represents an OpenAI Tic Tac Toe environment
         :param learning_rate: The learning rate, or alpha, for the egreedy learning algorithm
         :param show_number: Display numbers on the tic tac toe board
         """
-        self.board_size = 9
+        self.board_size: int = 9
 
         # Each location on the board represents an action
         self.action_space = gym.spaces.Discrete(self.board_size)
 
         # Each location on the board is part of the observation space
         self.observation_space = gym.spaces.Discrete(self.board_size)
-        self.learning_rate = learning_rate
-        self.start_mark = "X"
+        self.learning_rate: float = learning_rate
+        self.start_mark: str = "X"
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
 
         # Display numbers on the board for humans
-        self.show_number = show_number
-        self.board = [None] * self.board_size
-        self.mark = self.start_mark
-        self.done = False
+        self.show_number: bool = show_number
+        self.board: Tuple[Mark] = [None] * self.board_size
+        self.mark: Mark = self.start_mark
+        self.done: bool = False
 
         # set numpy random seed
         self.seed()
@@ -120,10 +122,10 @@ class TicTacToeEnv(gym.Env):
         """
         return tuple(self.board) + (self.mark,)
 
-    def render(self, human: bool = False):
+    def render(self, mode=None):
         """
         Draw tictactoe board
-        :param human: Displays numbers on the board for humans to make a decision
+        :param mode:  Only human rendering mode is available
         """
         if self.show_number:
             marks = [str(index) if mark is None else mark for index, mark in enumerate(self.board)]
@@ -137,7 +139,7 @@ class TicTacToeEnv(gym.Env):
             if j < 6:
                 board_string += "  " + "-----\n"
 
-        if human:
+        if mode == 'human':
             print(board_string)
         else:
             logging.info(pprint.pformat(board_string))
