@@ -88,7 +88,7 @@ class TicTacToeEnv(gym.Env):
         return self.observation
 
     @logging_utils.logged
-    def step(self, action: int) -> Tuple[Tuple, int, bool, dict]:
+    def step(self, action: int) -> Tuple[Tuple[Mark], int, bool, dict]:
         """
         Step environment by action.
         :param action: The location on the board to mark with an 'X' or 'O'
@@ -111,7 +111,7 @@ class TicTacToeEnv(gym.Env):
         return self.observation, reward, self.done, self.info
 
     @property
-    def observation(self) -> Tuple:
+    def observation(self) -> Tuple[Mark]:
         """
         The state of this environment is the board along with the current player's turn.
         The first 9 elements are the state of the board in row major order, and the last
@@ -123,23 +123,17 @@ class TicTacToeEnv(gym.Env):
     def render(self, human: bool = False):
         """
         Draw tictactoe board
-        TODO: Clean this garbage up
         :param human: Displays numbers on the board for humans to make a decision
         """
+        if self.show_number:
+            marks = [str(index) if mark is None else mark for index, mark in enumerate(self.board)]
+        else:
+            marks = [" " if mark is None else mark for mark in self.board]
+
         board_string = ""
         for j in range(0, 9, 3):
-
-            def mark(i):
-                if not self.board[i] and self.show_number:
-                    return str(i + 1)
-                elif not self.board[i]:
-                    return " "
-                else:
-                    return str(self.board[i])
-
-            board_string += "  " + "|".join([mark(i) for i in range(j, j + 3)])
+            board_string += "  " + "|".join([marks[i] for i in range(j, j + 3)])
             board_string += "\n"
-
             if j < 6:
                 board_string += "  " + "-----\n"
 
