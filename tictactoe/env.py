@@ -51,11 +51,10 @@ def check_game_status(board: List[Mark]) -> Status:
 class TicTacToeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, learning_rate: float = 0.5, show_number: bool = False):
+    def __init__(self, learning_rate: float = 0.5):
         """
         Represents an OpenAI Tic Tac Toe environment
         :param learning_rate: The learning rate, or alpha, for the egreedy learning algorithm
-        :param show_number: Display numbers on the tic tac toe board
         """
         self.board_size: int = 9
 
@@ -70,7 +69,6 @@ class TicTacToeEnv(gym.Env):
         self.info = {"status": self.status}
 
         # Display numbers on the board for humans
-        self.show_number: bool = show_number
         self.board: Tuple[Mark] = [None] * self.board_size
         self.mark: Mark = self.start_mark
         self.done: bool = False
@@ -127,8 +125,8 @@ class TicTacToeEnv(gym.Env):
         Draw tictactoe board
         :param mode:  Only human rendering mode is available
         """
-        if self.show_number:
-            marks = [str(index) if mark is None else mark for index, mark in enumerate(self.board)]
+        if mode == "human":
+            marks = [str(index + 1) if mark is None else mark for index, mark in enumerate(self.board)]
         else:
             marks = [" " if mark is None else mark for mark in self.board]
 

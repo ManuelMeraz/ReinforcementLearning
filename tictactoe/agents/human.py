@@ -2,11 +2,12 @@
 import sys
 from typing import List, Tuple
 
+from env import Mark
 from .agent import Agent
 
 
 class Human(Agent):
-    def act(self, state: Tuple[None, str]) -> int:
+    def act(self, state: Tuple[Mark]) -> int:
         """
         Requests user input to place a mark on the board
         :param state:  A tuple containing the state of the board and the player's mark

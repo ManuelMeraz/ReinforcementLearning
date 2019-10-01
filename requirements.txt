@@ -1,4 +1,5 @@
 pytest
+tqdm
 numpy
 gym
 pandas
