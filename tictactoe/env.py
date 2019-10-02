@@ -51,10 +51,9 @@ def check_game_status(board: List[Mark]) -> Status:
 class TicTacToeEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, learning_rate: float = 0.5):
+    def __init__(self):
         """
         Represents an OpenAI Tic Tac Toe environment
-        :param learning_rate: The learning rate, or alpha, for the egreedy learning algorithm
         """
         self.board_size: int = 9
 
@@ -63,7 +62,6 @@ class TicTacToeEnv(gym.Env):
 
         # Each location on the board is part of the observation space
         self.observation_space = gym.spaces.Discrete(self.board_size)
-        self.learning_rate: float = learning_rate
         self.start_mark: str = "X"
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
@@ -147,7 +145,6 @@ class TicTacToeEnv(gym.Env):
             "board_size": 9,
             "action_space": self.action_space,
             "observation_space": self.observation_space,
-            "learning_rate": self.learning_rate,
             "current_mark": self.mark,
             "done": self.done,
             "board_state": self.board,

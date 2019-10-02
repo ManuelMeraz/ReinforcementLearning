@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import signal
 import sys
 from typing import Dict, Tuple, Union
 
@@ -10,38 +11,32 @@ from tictactoe.env import TicTacToeEnv, Status, Mark
 from utils.logging_utils import Logger
 
 
-def play(X: Union[Human, Base, TemporalDifference], O: Union[Human, Base, TemporalDifference]):
+def play(player_X: Union[Human, Base, TemporalDifference], player_O: Union[Human, Base, TemporalDifference]):
     """
     Play game of TicTactoe
-    :param X: Player X
-    :param O:  Player O
+    :param player_X: Player X
+    :param player_O:  Player O
     """
     env = TicTacToeEnv()
     obs: Tuple[Mark] = env.reset()
 
     players: Dict[str, Union[Human, Base, TemporalDifference]] = {
-        "X": X,
-        "O": O,
+        "X": player_X,
+        "O": player_O,
     }
 
-    mode = 'human' if isinstance(X, Human) or isinstance(O, Human) else None
+    mode = 'human' if isinstance(player_X, Human) or isinstance(player_O, Human) else None
 
     while True:
         env.render(mode=mode)
         current_player: Union[Human, Base, TemporalDifference] = players[obs[-1]]
         action: int = current_player.act(obs)
 
-        if isinstance(current_player, TemporalDifference):
-            prev_obs: Tuple[Mark] = obs
-
         obs: Tuple[Mark]
         reward: int
         done: bool
         info: dict
         obs, reward, done, info = env.step(action)
-
-        if isinstance(current_player, TemporalDifference):
-            current_player.learn(state=obs, previous_state=prev_obs, reward=reward)
 
         if done:
             status: Status = info["status"]
@@ -53,15 +48,18 @@ def play(X: Union[Human, Base, TemporalDifference], O: Union[Human, Base, Tempor
                     winner = {Status.O_WINS: "O", Status.X_WINS: "X"}
                     print(f"The winner is {winner[status]}!")
 
-            print("Playing new game.")
+                print("Playing new game.")
 
             env.render(mode=mode)
             obs = env.reset()
 
 
-def learn(num_episodes: int = 100, learning_rate=0.5, exploratory_rate=0.5):
+def learn(num_episodes: int = 100, learning_rate: float = 0.5, exploratory_rate: float = 0.5):
     """
     Pit two temporal difference agents against each other to learn the value of each state
+    :param exploratory_rate: The probability of sampling an action from a uniform random distribution
+                            instead of selecting the greedy action.
+    :param learning_rate:  The amount to learn from previous observations
     :param num_episodes:  The number of games to play each other
     """
     env = TicTacToeEnv()
@@ -94,7 +92,13 @@ def learn(num_episodes: int = 100, learning_rate=0.5, exploratory_rate=0.5):
                 break
 
 
+def keyboard_interrupt_handler(signal, frame):
+    sys.exit(0)
+
+
 def main():
+    signal.signal(signal.SIGINT, keyboard_interrupt_handler)
+
     parser = argparse.ArgumentParser();
     parser.add_argument("command", help="Play a game of TicTacToe or Train the TemporalDifference agent.")
     options = parser.parse_args(sys.argv[1:2])
@@ -111,13 +115,13 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
         agentTypes = {"human": Human(), "base": Base(),
                       "td": TemporalDifference(exploratory_rate=0.5, learning_rate=0.5)}
-        play(X=agentTypes[suboptions.X], O=agentTypes[suboptions.O])
+        play(player_X=agentTypes[suboptions.X], player_O=agentTypes[suboptions.O])
 
     elif options.command == "learn":
         subparser = subparsers.add_parser("learn",
                                           help="Pit two temporal agents against each other and generate a value map.")
         subparser.add_argument("-n", "--num-episodes",
-                               help="The number of episodes (games) to play against each other.", default=5000)
+                               help="The number of episodes (games) to play against each other.", default=10000)
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                default=0.5)
         subparser.add_argument("-l", "--learning-rate",

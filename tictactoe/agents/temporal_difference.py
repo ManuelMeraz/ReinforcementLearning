@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-
+import os
 import pprint
 import random
 from collections import defaultdict
@@ -23,13 +23,13 @@ class State:
 
 class TemporalDifference(Agent):
     def __init__(self, exploratory_rate=0.5, learning_rate=0.5):
-        import os
+        self.datafile = f"{TemporalDifference.__name__}_{exploratory_rate}_{learning_rate}"
 
-        datafile = "td_agent.csv"
-        if os.path.exists(datafile):
-            self.state_values = self.load_state_values(datafile)
+        if os.path.exists(self.datafile):
+            self.state_values = self.load_state_values()
         else:
             self.state_values = defaultdict(State)
+
         self.learning_rate = learning_rate
         self.exploratory_rate = exploratory_rate
 
@@ -40,14 +40,11 @@ class TemporalDifference(Agent):
         e = random.random()
 
         if e < self.exploratory_rate:
-            action = self.random_action(available_actions)
+            action = random.choice(available_actions)
         else:
             action = self.greedy_action(state, available_actions)
 
         return action
-
-    def random_action(self, available_actions):
-        return random.choice(available_actions)
 
     def greedy_action(self, state, available_actions):
         import copy
@@ -74,14 +71,13 @@ class TemporalDifference(Agent):
 
         self.state_values[state].count += 1
 
-    @staticmethod
-    def load_state_values(filename):
-        data = pd.read_csv(filename)
+    def load_state_values(self):
+        data = pd.read_csv(self.datafile)
         data = data.replace({pd.np.nan: None}).values.tolist()
-        state_values = defaultdict(State)
+        self.state_values = defaultdict(State)
         for d in data:
-            state_values[tuple(d[1:11])] = State(d[11], d[12])
-        return state_values
+            self.state_values[tuple(d[1:11])] = State(d[11], d[12])
+        return self.state_values
 
     def save_state_values(self):
         data = []
@@ -90,7 +86,7 @@ class TemporalDifference(Agent):
                 data.append(key + (value.value, value.count))
 
         df = pd.DataFrame(data)
-        df.to_csv("td_agent.csv")
+        df.to_csv(self.datafile)
 
     def __del__(self):
         self.save_state_values()
