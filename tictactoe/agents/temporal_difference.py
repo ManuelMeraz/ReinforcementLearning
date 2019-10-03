@@ -3,7 +3,7 @@ import os
 import pprint
 import random
 from collections import defaultdict
-from typing import Tuple, List, Any, Dict
+from typing import Tuple, List, Dict
 
 import pandas
 
@@ -11,7 +11,7 @@ from env import Mark
 from .agent import Agent
 
 
-class State:
+class Value:
     def __init__(self, value: float = 0.0, count: int = 0):
         """
         Stores the value of a state and how many times the agent has been in this state
@@ -27,16 +27,11 @@ class State:
     def __repr__(self):
         return self.__str__()
 
-    def __add__(self, other):
-        total_value: float = self.value + other.value
-        total_count: int = self.count + other.count
-        return State(total_value, total_count)
-
 
 class TemporalDifference(Agent):
 
     def __init__(self, exploratory_rate: float = 0.1, learning_rate: float = 0.5,
-                 state_values: Dict[Tuple[Mark], State] = None):
+                 state_values: Dict[Tuple[Mark], Value] = None, load_data: bool = False):
         """
         Represents an agent learning with temporal difference
         :param exploratory_rate: The probability of selecting a random action
@@ -44,7 +39,9 @@ class TemporalDifference(Agent):
         :param state_values: A mapping of states to and their associated values
         """
         self.datafile: str = f"{TemporalDifference.__name__}_{exploratory_rate}_{learning_rate}"
-        if not state_values:
+        if not state_values and not load_data:
+            self.state_values = defaultdict(Value)
+        elif not state_values:
             self.state_values = TemporalDifference.load_state_values(self.datafile)
         else:
             self.state_values = state_values
@@ -121,11 +118,21 @@ class TemporalDifference(Agent):
         Merge state values of another TD agent with this one
         :param agent: another temporal difference agent
         """
-        for key, value in agent.state_values.items():
-            self.state_values[key] += value
+        for state, other_value in agent.state_values.items():
+            value = self.state_values[state];
+
+            total_count = value.count + other_value.count
+
+            if total_count == 0:
+                value.value = (value.value + other_value.value) / 2
+            else:
+                value.value = (value.count / total_count) * value.value + (
+                        other_value.count / total_count) * other_value.value
+
+            value.count = 0
 
     @staticmethod
-    def load_state_values(datafile: str) -> Dict[Tuple[Mark], State]:
+    def load_state_values(datafile: str) -> Dict[Tuple[Mark], Value]:
         """
         Load data from csv file and convert it to state values
         :param datafile: The name of a csv file containing the data
@@ -134,21 +141,21 @@ class TemporalDifference(Agent):
         if os.path.exists(datafile):
             data = pandas.read_csv(datafile)
             data = data.replace({pandas.np.nan: None}).values.tolist()
-            state_values = defaultdict(State)
+            state_values = defaultdict(Value)
             for d in data:
-                state_values[tuple(d[1:11])] = State(value=d[11], count=d[12])
+                state_values[tuple(d[1:11])] = Value(value=d[11], count=d[12])
             return state_values
         else:
-            return defaultdict(State)
+            return defaultdict(Value)
 
     @staticmethod
-    def save_state_values(state_values: Dict[Tuple[Mark], State], datafile: str):
+    def save_state_values(state_values: Dict[Tuple[Mark], Value], datafile: str):
         """
         Save the state values into a csv file
         :param state_values: The state value mapping
         :param datafile: The name of the file to write to
         """
-        data: List[Tuple[Any, ...]] = []
+        data = []
         for key, value in state_values.items():
             if isinstance(key, tuple):
                 data.append(key + (value.value, value.count))

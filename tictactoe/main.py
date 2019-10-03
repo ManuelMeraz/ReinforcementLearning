@@ -64,60 +64,69 @@ def merge_agents(agents: TemporalDifference) -> TemporalDifference:
     return main_agent
 
 
-def learn_from_game(td_agent):
-    env = TicTacToeEnv()
-    obs: Tuple[Mark] = env.reset()
+def learn_from_game(args):
+    td_agent = args[0]
+    num_games = args[1]
+    index = args[2]
+    num_cpus = args[3]
 
-    players: Dict[str, TemporalDifference] = {
-        "X": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
-        "O": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
-    }
+    for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
+        env = TicTacToeEnv()
+        obs: Tuple[Mark] = env.reset()
 
-    while True:
-        current_player: TemporalDifference = players[obs[-1]]
-        action: int = current_player.act(obs)
+        players: Dict[str, TemporalDifference] = {
+            "X": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
+            "O": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
+        }
 
-        obs: Tuple[Mark]
-        reward: int
-        done: bool
-        info: dict
+        while True:
+            current_player: TemporalDifference = players[obs[-1]]
+            action: int = current_player.act(obs)
 
-        obs, reward, done, info = env.step(action)
-        current_player.learn(state=obs, reward=reward)
+            obs: Tuple[Mark]
+            reward: int
+            done: bool
+            info: dict
 
-        if done:
-            td_agent.merge(players["X"])
-            td_agent.merge(players["O"])
-            break
+            obs, reward, done, info = env.step(action)
+            current_player.learn(state=obs, reward=reward)
+
+            if done:
+
+                if info["status"] == Status.X_WINS:
+                    td_agent.merge(players["X"])
+                elif info["status"] == Status.O_WINS:
+                    td_agent.merge(players["O"])
+
+                break
 
     return td_agent
 
 
-def learn(main_agent: TemporalDifference, num_episodes: int = 100):
+def learn(main_agent: TemporalDifference, num_games: int, num_agents: int):
     """
-    Pit two temporal difference agents against each other to learn the value of each state
+    Pit agents against themselves tournament style. The winners survive.
     :param main_agent: The agent that will learn from playing games
-    :param num_episodes:  The number of games to play each other
+    :param num_games:  The number of games to play each other
+    :param num_agents:  The number of games to play each other
     """
 
-    print(f"Learning! Number of episodes: {num_episodes}")
+    print(f"Learning! Number of games: {num_games} Number of agents: {num_agents}")
 
     processes = multiprocessing.cpu_count()
-    chunksize = math.floor(num_episodes / processes)
+
+    if num_agents < processes:
+        processes = num_agents
+
+    chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
-        # clone the main agent
-        agents = (TemporalDifference(main_agent.exploratory_rate, main_agent.learning_rate, main_agent.state_values) for
-                  _ in range(num_episodes))
+        agents = [(TemporalDifference(main_agent.exploratory_rate, main_agent.learning_rate, main_agent.state_values),
+                   num_games, i, processes) for i in range(num_agents)]
 
-        print("Playing games.")
-        agents = list(tqdm(pool.imap(learn_from_game, iterable=agents, chunksize=chunksize), total=num_episodes))
+        print("Playing games...")
+        agents = pool.map(learn_from_game, iterable=agents, chunksize=chunksize)
 
-        print("Merging knowledge.")
-        size = int(math.ceil(float(len(agents)) / processes))
-        agents = [agents[i * size:(i + 1) * size] for i in range(processes)]
-
-        agents = list(tqdm(pool.imap(merge_agents, iterable=agents), total=len(agents)))
-
+        print("Merging knowledge...")
         for agent in agents:
             main_agent.merge(agent)
 
@@ -158,8 +167,10 @@ def main():
     elif options.command == "learn":
         subparser = subparsers.add_parser("learn",
                                           help="Pit two temporal agents against each other and generate a value map.")
-        subparser.add_argument("-n", "--num-episodes",
-                               help="The number of episodes (games) to play against each other.", default=10000)
+        subparser.add_argument("-n", "--num-games",
+                               help="The number of games to play against each other.", default=100)
+        subparser.add_argument("-a", "--num-agents",
+                               help="The number of agents to pit against themselves.", default=1000)
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                default=0.1)
         subparser.add_argument("-l", "--learning-rate",
@@ -170,7 +181,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
 
         agent = TemporalDifference(exploratory_rate=suboptions.exploratory_rate, learning_rate=suboptions.learning_rate)
-        learn(agent, num_episodes=int(suboptions.num_episodes))
+        learn(agent, num_games=int(suboptions.num_games), num_agents=int(suboptions.num_agents))
     else:
         print("No other options.")
 
