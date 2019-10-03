@@ -1,11 +1,12 @@
 #! /usr/bin/env python3
-import os
 import pprint
 import random
 from collections import defaultdict
+from typing import Tuple, List
 
 import pandas as pd
 
+from env import Mark
 from .agent import Agent
 
 
@@ -20,29 +21,29 @@ class State:
     def __repr__(self):
         return self.__str__()
 
+    def __add__(self, other):
+        total_value = self.value + other.value
+        total_count = self.count + other.count
+        return State(total_value, total_count)
+
 
 class TemporalDifference(Agent):
-    def __init__(self, exploratory_rate=0.5, learning_rate=0.5):
-        self.datafile = f"{TemporalDifference.__name__}_{exploratory_rate}_{learning_rate}"
-
-        if os.path.exists(self.datafile):
-            self.state_values = self.load_state_values()
-        else:
-            self.state_values = defaultdict(State)
-
-        self.learning_rate = learning_rate
-        self.exploratory_rate = exploratory_rate
+    def __init__(self, exploratory_rate: float = 0.5, learning_rate: float = 0.5, state_values=defaultdict(State)):
+        self.datafile: str = f"{TemporalDifference.__name__}_{exploratory_rate}_{learning_rate}"
+        self.state_values = state_values
+        self.learning_rate: float = learning_rate
+        self.exploratory_rate: float = exploratory_rate
 
     def act(self, state):
         return self.egreedy_policy(state, super().available_actions(state))
 
-    def egreedy_policy(self, state, available_actions):
-        e = random.random()
+    def egreedy_policy(self, state: Tuple[Mark], available_actions: List[int]) -> int:
+        e: float = random.random()
 
         if e < self.exploratory_rate:
-            action = random.choice(available_actions)
+            action: int = random.choice(available_actions)
         else:
-            action = self.greedy_action(state, available_actions)
+            action: int = self.greedy_action(state, available_actions)
 
         return action
 
@@ -65,28 +66,34 @@ class TemporalDifference(Agent):
         """
         Apply temporal difference learning
         """
-        self.state_values[state].value += self.learning_rate * (
+        self.state_values[previous_state].value += self.learning_rate * (
                 reward -
                 self.state_values[previous_state].value)
 
         self.state_values[state].count += 1
 
-    def load_state_values(self):
-        data = pd.read_csv(self.datafile)
-        data = data.replace({pd.np.nan: None}).values.tolist()
-        self.state_values = defaultdict(State)
-        for d in data:
-            self.state_values[tuple(d[1:11])] = State(d[11], d[12])
-        return self.state_values
+    def merge(self, agent):
+        """
+        Merge state values of another TD agent with this one
+        """
+        for key, value in agent.state_values.items():
+            self.state_values[key] += value
 
-    def save_state_values(self):
+    @staticmethod
+    def load_state_values(datafile):
+        data = pd.read_csv(datafile)
+        data = data.replace({pd.np.nan: None}).values.tolist()
+        state_values = defaultdict(State)
+        for d in data:
+            state_values[tuple(d[1:11])] = State(d[11], d[12])
+        return state_values
+
+    @staticmethod
+    def save_state_values(state_values, datafile):
         data = []
-        for key, value in self.state_values.items():
+        for key, value in state_values.items():
             if isinstance(key, tuple):
                 data.append(key + (value.value, value.count))
 
         df = pd.DataFrame(data)
-        df.to_csv(self.datafile)
-
-    def __del__(self):
-        self.save_state_values()
+        df.to_csv(datafile)
