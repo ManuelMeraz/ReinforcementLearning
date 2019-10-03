@@ -2,16 +2,13 @@
 import argparse
 import math
 import multiprocessing
-import os
 import signal
 import sys
-from collections import defaultdict
 from typing import Dict, Tuple, Union
 
 from tqdm import tqdm
 
 from agents import Human, Base, TemporalDifference
-from agents.temporal_difference import State
 from tictactoe.env import TicTacToeEnv, Status, Mark
 from utils.logging_utils import Logger
 
@@ -72,49 +69,46 @@ def learn_from_game(td_agent):
     obs: Tuple[Mark] = env.reset()
 
     players: Dict[str, TemporalDifference] = {
-        "X": td_agent,
-        "O": td_agent,
+        "X": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
+        "O": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
     }
 
     while True:
         current_player: TemporalDifference = players[obs[-1]]
         action: int = current_player.act(obs)
 
-        prev_obs: Tuple[Mark] = obs
         obs: Tuple[Mark]
         reward: int
         done: bool
         info: dict
+
         obs, reward, done, info = env.step(action)
-        current_player.learn(state=obs, previous_state=prev_obs, reward=reward)
+        current_player.learn(state=obs, reward=reward)
 
         if done:
+            td_agent.merge(players["X"])
+            td_agent.merge(players["O"])
             break
 
     return td_agent
 
 
-def learn(num_episodes: int = 100, learning_rate: float = 0.5, exploratory_rate: float = 0.1):
+def learn(main_agent: TemporalDifference, num_episodes: int = 100):
     """
     Pit two temporal difference agents against each other to learn the value of each state
-    :param exploratory_rate: The probability of sampling an action from a uniform random distribution
-                            instead of selecting the greedy action.
-    :param learning_rate:  The amount to learn from previous observations
+    :param main_agent: The agent that will learn from playing games
     :param num_episodes:  The number of games to play each other
     """
 
     print(f"Learning! Number of episodes: {num_episodes}")
 
-    datafile = f"TemporalDifference_{exploratory_rate}_{learning_rate}"
-    if os.path.exists(datafile):
-        state_values = TemporalDifference.load_state_values(datafile)
-    else:
-        state_values = defaultdict(State)
-
     processes = multiprocessing.cpu_count()
     chunksize = math.floor(num_episodes / processes)
     with multiprocessing.Pool(processes=processes) as pool:
-        agents = (TemporalDifference(exploratory_rate, learning_rate, state_values) for x in range(num_episodes))
+        # clone the main agent
+        agents = (TemporalDifference(main_agent.exploratory_rate, main_agent.learning_rate, main_agent.state_values) for
+                  _ in range(num_episodes))
+
         print("Playing games.")
         agents = list(tqdm(pool.imap(learn_from_game, iterable=agents, chunksize=chunksize), total=num_episodes))
 
@@ -124,13 +118,10 @@ def learn(num_episodes: int = 100, learning_rate: float = 0.5, exploratory_rate:
 
         agents = list(tqdm(pool.imap(merge_agents, iterable=agents), total=len(agents)))
 
-        main_agent = TemporalDifference(exploratory_rate, learning_rate)
         for agent in agents:
             main_agent.merge(agent)
 
-        state_values = main_agent.state_values
-
-    TemporalDifference.save_state_values(state_values, datafile)
+    TemporalDifference.save_state_values(main_agent.state_values, main_agent.datafile)
 
 
 def keyboard_interrupt_handler(signal, frame):
@@ -162,7 +153,6 @@ def main():
         agentTypes = {"human": Human(), "base": Base(),
                       "td": TemporalDifference(exploratory_rate=0.1, learning_rate=0.5)}
 
-        agentTypes[suboptions.X].state_values = TemporalDifference.load_state_values(agentTypes[suboptions.X].datafile)
         play(player_X=agentTypes[suboptions.X], player_O=agentTypes[suboptions.O])
 
     elif options.command == "learn":
@@ -178,8 +168,9 @@ def main():
         logger: Logger = Logger(parser=subparser)
 
         suboptions = subparser.parse_args(sys.argv[2:])
-        learn(num_episodes=int(suboptions.num_episodes), exploratory_rate=suboptions.exploratory_rate,
-              learning_rate=suboptions.learning_rate)
+
+        agent = TemporalDifference(exploratory_rate=suboptions.exploratory_rate, learning_rate=suboptions.learning_rate)
+        learn(agent, num_episodes=int(suboptions.num_episodes))
     else:
         print("No other options.")
 

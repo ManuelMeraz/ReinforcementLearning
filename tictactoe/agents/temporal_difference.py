@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
+import os
 import pprint
 import random
 from collections import defaultdict
-from typing import Tuple, List, Any
+from typing import Tuple, List, Any, Dict
 
 import pandas
 
@@ -34,7 +35,8 @@ class State:
 
 class TemporalDifference(Agent):
 
-    def __init__(self, exploratory_rate: float = 0.1, learning_rate: float = 0.5, state_values=None):
+    def __init__(self, exploratory_rate: float = 0.1, learning_rate: float = 0.5,
+                 state_values: Dict[Tuple[Mark], State] = None):
         """
         Represents an agent learning with temporal difference
         :param exploratory_rate: The probability of selecting a random action
@@ -49,6 +51,8 @@ class TemporalDifference(Agent):
 
         self.learning_rate: float = learning_rate
         self.exploratory_rate: float = exploratory_rate
+        self.previous_state: Tuple[Mark] = None
+        self.previous_reward: int = None
 
     def act(self, state: Tuple[Mark]) -> int:
         """
@@ -95,16 +99,20 @@ class TemporalDifference(Agent):
 
         return available_actions[max_index]
 
-    def learn(self, state: Tuple[Mark], previous_state: Tuple[Mark], reward: int):
+    def learn(self, state: Tuple[Mark], reward: int):
         """
         Apply temporal difference learning and update the state and values of this agent
         :param state: The current state of the board along with the current mark this agent represents
-        :param previous_state: The previous state of the board along with the current mark this agent represents
         :param reward: The reward having taken the most recent action
         """
-        self.state_values[previous_state].value += self.learning_rate * (
-                reward -
-                self.state_values[previous_state].value)
+
+        self.previous_state = state
+        self.previous_reward = reward
+
+        previous_state_value = self.state_values[self.previous_state]
+        current_state_value = self.state_values[state]
+        previous_state_value.value += 1 / (previous_state_value.count + 1) * (
+                reward + current_state_value.value - previous_state_value.value)
 
         self.state_values[state].count += 1
 
@@ -117,21 +125,24 @@ class TemporalDifference(Agent):
             self.state_values[key] += value
 
     @staticmethod
-    def load_state_values(datafile: str) -> defaultdict[State]:
+    def load_state_values(datafile: str) -> Dict[Tuple[Mark], State]:
         """
         Load data from csv file and convert it to state values
         :param datafile: The name of a csv file containing the data
         :return: The state value mapping
         """
-        data = pandas.read_csv(datafile)
-        data = data.replace({pandas.np.nan: None}).values.tolist()
-        state_values = defaultdict(State)
-        for d in data:
-            state_values[tuple(d[1:11])] = State(value=d[11], count=d[12])
-        return state_values
+        if os.path.exists(datafile):
+            data = pandas.read_csv(datafile)
+            data = data.replace({pandas.np.nan: None}).values.tolist()
+            state_values = defaultdict(State)
+            for d in data:
+                state_values[tuple(d[1:11])] = State(value=d[11], count=d[12])
+            return state_values
+        else:
+            return defaultdict(State)
 
     @staticmethod
-    def save_state_values(state_values: defaultdict[State], datafile: str):
+    def save_state_values(state_values: Dict[Tuple[Mark], State], datafile: str):
         """
         Save the state values into a csv file
         :param state_values: The state value mapping
