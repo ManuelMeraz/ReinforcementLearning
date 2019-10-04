@@ -13,21 +13,21 @@ from tictactoe.env import TicTacToeEnv, Status, Mark
 from utils.logging_utils import Logger
 
 
-def play(player_X: Union[Human, Base, TemporalDifference], player_O: Union[Human, Base, TemporalDifference]):
+def play(player_x: Union[Human, Base, TemporalDifference], player_o: Union[Human, Base, TemporalDifference]):
     """
     Play game of TicTactoe
-    :param player_X: Player X
-    :param player_O:  Player O
+    :param player_x: Player X
+    :param player_o:  Player O
     """
     env = TicTacToeEnv()
     obs: Tuple[Mark] = env.reset()
 
     players: Dict[str, Union[Human, Base, TemporalDifference]] = {
-        "X": player_X,
-        "O": player_O,
+        "X": player_x,
+        "O": player_o,
     }
 
-    mode = 'human' if isinstance(player_X, Human) or isinstance(player_O, Human) else None
+    mode = 'human' if isinstance(player_x, Human) or isinstance(player_o, Human) else None
 
     while True:
         env.render(mode=mode)
@@ -147,13 +147,27 @@ def main():
                                default="td")
         subparser.add_argument("-O", choices=["human", "base", "td"], help="Human, Base, or Temporal Difference",
                                default="human")
+        subparser.add_argument("-p", "--with-policy", help="A data file containing a policy, generated from learning.")
         logger: Logger = Logger(parser=subparser)
 
         suboptions = subparser.parse_args(sys.argv[2:])
+
         agentTypes = {"human": Human(), "base": Base(),
                       "td": TemporalDifference('X', exploratory_rate=0.0, learning_rate=0.5)}
 
-        play(player_X=agentTypes[suboptions.X], player_O=agentTypes[suboptions.O])
+        player_x = agentTypes[suboptions.X]
+        player_o = agentTypes[suboptions.O]
+
+        if isinstance(player_o, TemporalDifference) and suboptions.with_policy:
+            player_o.state_values = TemporalDifference.load_state_values(suboptions.with_policy)
+            player_o.mark = 'O'
+
+        if isinstance(player_x, TemporalDifference) and suboptions.with_policy:
+            player_x.state_values = TemporalDifference.load_state_values(suboptions.with_policy)
+            player_o.mark = 'X'
+
+        play(player_x=player_x, player_o=player_o)
+
 
     elif options.command == "learn":
         subparser = subparsers.add_parser("learn",
