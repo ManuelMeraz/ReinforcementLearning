@@ -56,6 +56,7 @@ class TicTacToeEnv(gym.Env):
         Represents an OpenAI Tic Tac Toe environment
         """
         self.board_size: int = 9
+        self.game_ticks = 0
 
         # Each location on the board represents an action
         self.action_space = gym.spaces.Discrete(self.board_size)
@@ -83,6 +84,7 @@ class TicTacToeEnv(gym.Env):
         self.board = [None] * self.board_size
         self.mark = self.start_mark
         self.done = False
+        self.game_ticks = 0
         return self.observation
 
     @logging_utils.logged
@@ -93,6 +95,7 @@ class TicTacToeEnv(gym.Env):
         :returns: Observation, Reward, Done, Info
         """
         assert self.action_space.contains(action), f"Action not available in action space: {action}"
+        self.game_ticks += 1
 
         reward = 0
         self.board[action] = self.mark
@@ -101,7 +104,7 @@ class TicTacToeEnv(gym.Env):
 
         if self.status != Status.IN_PROGRESS:
             self.done = True
-            reward = 1
+            reward = 1 / self.game_ticks
 
         if not self.done:
             self.mark = "X" if self.mark == "O" else "O"

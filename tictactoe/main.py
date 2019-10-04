@@ -80,8 +80,8 @@ def learn_from_game(args):
         }
 
         while True:
-            current_player: TemporalDifference = players[obs[-1]]
-            action: int = current_player.act(obs)
+            current_player_mark = obs[-1]
+            action: int = players[current_player_mark].act(obs)
 
             obs: Tuple[Mark]
             reward: int
@@ -89,7 +89,7 @@ def learn_from_game(args):
             info: dict
 
             obs, reward, done, info = env.step(action)
-            current_player.learn(state=obs, reward=reward)
+            players[current_player_mark].learn(state=obs, reward=reward)
 
             if done:
 
@@ -97,7 +97,6 @@ def learn_from_game(args):
                     td_agent.merge(players["X"])
                 elif info["status"] == Status.O_WINS:
                     td_agent.merge(players["O"])
-
                 break
 
     return td_agent
@@ -168,20 +167,22 @@ def main():
         subparser = subparsers.add_parser("learn",
                                           help="Pit two temporal agents against each other and generate a value map.")
         subparser.add_argument("-n", "--num-games",
-                               help="The number of games to play against each other.", default=100)
+                               help="The number of games to play against each other.", type=int, default=10000)
         subparser.add_argument("-a", "--num-agents",
-                               help="The number of agents to pit against themselves.", default=1000)
+                               help="The number of agents to pit against themselves.", type=int, default=24)
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
+                               type=float,
                                default=0.1)
         subparser.add_argument("-l", "--learning-rate",
                                help="The amount to scale the learning of the temporal difference algorithm.",
+                               type=float,
                                default=0.5)
         logger: Logger = Logger(parser=subparser)
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
         agent = TemporalDifference(exploratory_rate=suboptions.exploratory_rate, learning_rate=suboptions.learning_rate)
-        learn(agent, num_games=int(suboptions.num_games), num_agents=int(suboptions.num_agents))
+        learn(agent, num_games=suboptions.num_games, num_agents=suboptions.num_agents)
     else:
         print("No other options.")
 

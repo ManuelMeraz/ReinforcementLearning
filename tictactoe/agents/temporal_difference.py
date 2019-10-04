@@ -31,7 +31,7 @@ class Value:
 class TemporalDifference(Agent):
 
     def __init__(self, exploratory_rate: float = 0.1, learning_rate: float = 0.5,
-                 state_values: Dict[Tuple[Mark], Value] = None, load_data: bool = False):
+                 state_values: Dict[Tuple[Mark], Value] = None, load_data: bool = True):
         """
         Represents an agent learning with temporal difference
         :param exploratory_rate: The probability of selecting a random action
@@ -82,13 +82,14 @@ class TemporalDifference(Agent):
         :param available_actions: A list of available possible actions (positions on the board to mark)
         :return: The action with the highest value
         """
-        import copy
 
-        max_index: int = 0
         max_value: int = 0
+        current_player_mark = state[-1]
+        max_index: int = random.choice(range(len(available_actions)))
         for index, action in enumerate(available_actions):
-            next_state: int = copy.deepcopy(state)[action]
-            next_value: float = self.state_values[next_state].value
+            next_state: List[Mark] = list((*state[:9], "X" if state[-1] == "O" else "O"))
+            next_state[action] = current_player_mark
+            next_value: float = self.state_values[tuple(next_state)].value
 
             if next_value > max_value:
                 max_index: int = index
@@ -103,15 +104,24 @@ class TemporalDifference(Agent):
         :param reward: The reward having taken the most recent action
         """
 
-        self.previous_state = state
-        self.previous_reward = reward
+        if self.previous_state is None and self.previous_reward is None:
+            self.previous_state = state
+            self.previous_reward = reward
+            return
 
-        previous_state_value = self.state_values[self.previous_state]
-        current_state_value = self.state_values[state]
-        previous_state_value.value += 1 / (previous_state_value.count + 1) * (
-                reward + current_state_value.value - previous_state_value.value)
+        previous_value = self.state_values[self.previous_state]
+        current_value = self.state_values[state]
+
+        previous_value.value += 1 / (previous_value.count + 1) * (
+                reward + current_value.value - previous_value.value)
+        # previous_value.value += self.learning_rate * (
+        #         reward + current_value.value - previous_value.value)
 
         self.state_values[state].count += 1
+        self.state_values[self.previous_state] = previous_value
+
+        self.previous_state = state
+        self.previous_reward = reward
 
     def merge(self, agent):
         """
@@ -119,17 +129,20 @@ class TemporalDifference(Agent):
         :param agent: another temporal difference agent
         """
         for state, other_value in agent.state_values.items():
+            if other_value.value == 0:
+                continue
+
             value = self.state_values[state];
-
-            total_count = value.count + other_value.count
-
-            if total_count == 0:
-                value.value = (value.value + other_value.value) / 2
+            if value.count == 0 and value.value == 0:
+                value = other_value
             else:
-                value.value = (value.count / total_count) * value.value + (
-                        other_value.count / total_count) * other_value.value
+                value.value = (value.value + other_value.value) / 2
+                # total_count = value.count + other_value.count
+                # value.value = value.count * value.value + other_value.count * other_value.value
+                # value.value /= total_count
 
             value.count = 0
+            self.state_values[state] = value
 
     @staticmethod
     def load_state_values(datafile: str) -> Dict[Tuple[Mark], Value]:
