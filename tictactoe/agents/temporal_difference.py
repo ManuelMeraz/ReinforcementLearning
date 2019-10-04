@@ -87,7 +87,8 @@ class TemporalDifference(Agent):
         :return: The action with the highest value
         """
 
-        max_value: int = 0
+        import sys
+        max_value: int = -sys.maxsize - 1
         max_index: int = 0
 
         for index, action in enumerate(available_actions):

@@ -104,7 +104,11 @@ class TicTacToeEnv(gym.Env):
 
         if self.status != Status.IN_PROGRESS:
             self.done = True
-            reward = 1 / self.game_ticks
+
+            if self.status == Status.DRAW:
+                reward = 0
+            else:
+                reward = 1 / self.game_ticks
 
         self.mark = "X" if self.mark == "O" else "O"
         return self.observation, reward, self.done, self.info

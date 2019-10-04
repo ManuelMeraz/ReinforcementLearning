@@ -81,6 +81,10 @@ def learn_from_game(args):
                     players["O"].learn(board_state=prev_obs["board"], reward=-1 * reward)
                 elif info["status"] == Status.O_WINS:
                     players["X"].learn(board_state=prev_obs["board"], reward=-1 * reward)
+                else:
+                    players["X"].learn(board_state=prev_obs["board"], reward=reward)
+                    players["O"].learn(board_state=prev_obs["board"], reward=reward)
+
 
                 td_agent.merge(players["X"])
                 td_agent.merge(players["O"])
