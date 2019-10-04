@@ -31,13 +31,9 @@ def play(player_X: Union[Human, Base, TemporalDifference], player_O: Union[Human
 
     while True:
         env.render(mode=mode)
-        current_player: Union[Human, Base, TemporalDifference] = players[obs[-1]]
-        action: int = current_player.act(obs)
+        current_player: Union[Human, Base, TemporalDifference] = players[obs["next_player"]]
+        action: int = current_player.act(obs["board"])
 
-        obs: Tuple[Mark]
-        reward: int
-        done: bool
-        info: dict
         obs, reward, done, info = env.step(action)
 
         if done:
@@ -56,14 +52,6 @@ def play(player_X: Union[Human, Base, TemporalDifference], player_O: Union[Human
             obs = env.reset()
 
 
-def merge_agents(agents: TemporalDifference) -> TemporalDifference:
-    main_agent = TemporalDifference()
-    for agent in agents:
-        main_agent.merge(agent)
-
-    return main_agent
-
-
 def learn_from_game(args):
     td_agent = args[0]
     num_games = args[1]
@@ -75,28 +63,27 @@ def learn_from_game(args):
         obs: Tuple[Mark] = env.reset()
 
         players: Dict[str, TemporalDifference] = {
-            "X": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
-            "O": TemporalDifference(td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
+            "X": TemporalDifference('X', td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
+            "O": TemporalDifference('O', td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
         }
 
         while True:
-            current_player_mark = obs[-1]
-            action: int = players[current_player_mark].act(obs)
+            current_player = obs["next_player"]
+            action: int = players[current_player].act(obs["board"])
 
-            obs: Tuple[Mark]
-            reward: int
-            done: bool
-            info: dict
-
+            prev_obs = obs
             obs, reward, done, info = env.step(action)
-            players[current_player_mark].learn(state=obs, reward=reward)
+            players[current_player].learn(board_state=obs["board"], reward=reward)
 
             if done:
 
                 if info["status"] == Status.X_WINS:
-                    td_agent.merge(players["X"])
+                    players["O"].learn(board_state=prev_obs["board"], reward=-1 * reward)
                 elif info["status"] == Status.O_WINS:
-                    td_agent.merge(players["O"])
+                    players["X"].learn(board_state=prev_obs["board"], reward=-1 * reward)
+
+                td_agent.merge(players["X"])
+                td_agent.merge(players["O"])
                 break
 
     return td_agent
@@ -119,8 +106,9 @@ def learn(main_agent: TemporalDifference, num_games: int, num_agents: int):
 
     chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
-        agents = [(TemporalDifference(main_agent.exploratory_rate, main_agent.learning_rate, main_agent.state_values),
-                   num_games, i, processes) for i in range(num_agents)]
+        agents = [
+            (TemporalDifference('X', main_agent.exploratory_rate, main_agent.learning_rate, main_agent.state_values),
+             num_games, i, processes) for i in range(num_agents)]
 
         print("Playing games...")
         agents = pool.map(learn_from_game, iterable=agents, chunksize=chunksize)
@@ -159,7 +147,7 @@ def main():
 
         suboptions = subparser.parse_args(sys.argv[2:])
         agentTypes = {"human": Human(), "base": Base(),
-                      "td": TemporalDifference(exploratory_rate=0.1, learning_rate=0.5)}
+                      "td": TemporalDifference('X', exploratory_rate=0.0, learning_rate=0.5)}
 
         play(player_X=agentTypes[suboptions.X], player_O=agentTypes[suboptions.O])
 
@@ -181,7 +169,8 @@ def main():
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
-        agent = TemporalDifference(exploratory_rate=suboptions.exploratory_rate, learning_rate=suboptions.learning_rate)
+        agent = TemporalDifference('X', exploratory_rate=suboptions.exploratory_rate,
+                                   learning_rate=suboptions.learning_rate)
         learn(agent, num_games=suboptions.num_games, num_agents=suboptions.num_agents)
     else:
         print("No other options.")

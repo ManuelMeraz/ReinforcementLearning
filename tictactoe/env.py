@@ -68,7 +68,7 @@ class TicTacToeEnv(gym.Env):
         self.info = {"status": self.status}
 
         # Display numbers on the board for humans
-        self.board: Tuple[Mark] = [None] * self.board_size
+        self.board: List[Mark] = [None] * self.board_size
         self.mark: Mark = self.start_mark
         self.done: bool = False
 
@@ -88,7 +88,7 @@ class TicTacToeEnv(gym.Env):
         return self.observation
 
     @logging_utils.logged
-    def step(self, action: int) -> Tuple[Tuple[Mark], int, bool, dict]:
+    def step(self, action: int):
         """
         Step environment by action.
         :param action: The location on the board to mark with an 'X' or 'O'
@@ -106,20 +106,18 @@ class TicTacToeEnv(gym.Env):
             self.done = True
             reward = 1 / self.game_ticks
 
-        if not self.done:
-            self.mark = "X" if self.mark == "O" else "O"
-
+        self.mark = "X" if self.mark == "O" else "O"
         return self.observation, reward, self.done, self.info
 
     @property
-    def observation(self) -> Tuple[Mark]:
+    def observation(self):
         """
         The state of this environment is the board along with the current player's turn.
         The first 9 elements are the state of the board in row major order, and the last
         element is the current player's turn.
         :return: The state of the game.
         """
-        return tuple(self.board) + (self.mark,)
+        return {"board": self.board, "next_player": self.mark}
 
     def render(self, mode=None):
         """
