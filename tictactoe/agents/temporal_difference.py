@@ -30,7 +30,7 @@ class Value:
 
 class TemporalDifference(Agent):
 
-    def __init__(self, exploratory_rate: float = 0.1, learning_rate: float = 0.5,
+    def __init__(self, exploratory_rate: float = 0.0, learning_rate: float = 0.5,
                  state_values: Dict[Tuple[Mark], Value] = None, load_data: bool = True):
         """
         Represents an agent learning with temporal difference
@@ -83,9 +83,10 @@ class TemporalDifference(Agent):
         :return: The action with the highest value
         """
 
-        max_value: int = 0
         current_player_mark = state[-1]
-        max_index: int = random.choice(range(len(available_actions)))
+        max_value: int = 0
+        # max_index: int = random.choice(range(len(available_actions)))
+        max_index: int = 0
         for index, action in enumerate(available_actions):
             next_state: List[Mark] = list((*state[:9], "X" if state[-1] == "O" else "O"))
             next_state[action] = current_player_mark
@@ -135,13 +136,13 @@ class TemporalDifference(Agent):
             value = self.state_values[state];
             if value.count == 0 and value.value == 0:
                 value = other_value
-            else:
-                value.value = (value.value + other_value.value) / 2
+            # else:
+            #     value.value = (value.value + other_value.value) / 2
                 # total_count = value.count + other_value.count
                 # value.value = value.count * value.value + other_value.count * other_value.value
                 # value.value /= total_count
 
-            value.count = 0
+            # value.count = 0
             self.state_values[state] = value
 
     @staticmethod
