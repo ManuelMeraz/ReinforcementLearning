@@ -1,1 +1,0 @@
-#!/usr/binenv python3
