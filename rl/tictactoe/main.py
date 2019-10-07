@@ -141,18 +141,17 @@ def main():
 
     if options.command == "play":
         subparser = subparsers.add_parser("play", help="Play a game of TicTacToe!")
-        subparser.add_argument("-X", choices=["human", "base", "td"], help="Human, Base, or Temporal Difference",
-                               default="base")
-        subparser.add_argument("-O", choices=["human", "base", "td"], help="Human, Base, or Temporal Difference",
+        subparser.add_argument("-X", choices=["human", "base", "smart"], help="Human, Base, or Smart",
+                               default="smart")
+        subparser.add_argument("-O", choices=["human", "base", "smart"], help="Human, Base, or Smart",
                                default="human")
         subparser.add_argument("-p", "--with-policy", help="A data file containing a policy, generated from learning.")
         logger: Logger = Logger(parser=subparser)
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
-        # agent_types = {"human": HumanAgent(), "base": BaseAgent(),
-        #               "td": SmartAgent('X', exploratory_rate=0.0, learning_rate=0.5)}
-        agent_types = {"human": HumanAgent(), "base": BaseAgent()}
+        agent_types = {"human": HumanAgent(), "base": BaseAgent(),
+                       "smart": SmartAgent(learning_rate=0.5, exploratory_rate=0.0)}
 
         player_x = agent_types[suboptions.X]
         player_o = agent_types[suboptions.O]
