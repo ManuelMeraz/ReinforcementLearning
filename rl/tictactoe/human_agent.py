@@ -27,4 +27,4 @@ class HumanAgent(HumanPolicyAgent):
         :param actions: An array of available actions to the user
         :return: a string to be printed out for a user to read and select an action
         """
-        return f"Select one of the following slots: {str([action + 1 for action in actions])}"
+        return f"Select a slot: {str([action + 1 for action in actions])}: "

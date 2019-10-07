@@ -71,7 +71,7 @@ class EGreedyPolicyAgent(PolicyAgent):
         max_index: int = 0
 
         for index, action in enumerate(available_actions):
-            next_board_state: numpy.ndarray = self.transition_model(state, action)
+            next_board_state: numpy.ndarray = self.transition_model(state, action, copy=True)
             next_value: float = self.value_model(next_board_state, action)
 
             if next_value > max_value:

@@ -68,7 +68,7 @@ class TicTacToeEnv(gym.Env):
         # Each location on the board is part of the observation space
         # The last item is the current player's turn
         self.observation_space = gym.spaces.Discrete(self.board_size + 1)
-        self.start_mark = Mark.X
+        self.start_mark = Mark.O
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
 
@@ -105,6 +105,7 @@ class TicTacToeEnv(gym.Env):
         self.game_ticks += 1
 
         reward: float = 0.0
+        self.current_player = self.next_player()
         self.state[action]: Mark = self.current_player
         self.status: Status = game_status(self.state)
         self.info["status"]: Status = self.status
@@ -126,7 +127,6 @@ class TicTacToeEnv(gym.Env):
         :return: The state of the game.
         """
         self.state[-1] = self.current_player
-        self.current_player = self.next_player()
         return self.state
 
     def render(self, mode=None):

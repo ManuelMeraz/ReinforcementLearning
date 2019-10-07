@@ -31,7 +31,7 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
 
     while True:
         env.render(mode="human")
-        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.current_player]
+        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
         action: int = current_player.act(obs)
 
         obs, reward, done, info = env.step(action)
