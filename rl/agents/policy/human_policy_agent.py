@@ -17,7 +17,7 @@ class HumanPolicyAgent(PolicyAgent):
         available_actions: numpy.ndarray = self.available_actions(state)
 
         while True:
-            user_input: str = input(self.render_actions())
+            user_input: str = input(self.render_actions(available_actions))
 
             if user_input.startswith("q") or "quit" in user_input:
                 print("quitting!")

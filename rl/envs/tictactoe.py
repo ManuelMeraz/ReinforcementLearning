@@ -23,7 +23,7 @@ class Status(enum.IntEnum):
     DRAW = 3
 
 
-def game_status(observation: numpy.ndarray[Mark]) -> Status:
+def game_status(observation: numpy.ndarray) -> Status:
     """
     Determine the status of the game
     :param observation: The state of the board along with the player who just took a turn
@@ -46,7 +46,7 @@ def game_status(observation: numpy.ndarray[Mark]) -> Status:
     if observation[2] and len(set(observation[2:8:2])) == 1:
         return player_win_status[observation[2]]
 
-    if None in observation:
+    if Mark.EMPTY in observation:
         return Status.IN_PROGRESS
 
     return Status.DRAW
@@ -72,15 +72,18 @@ class TicTacToeEnv(gym.Env):
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
 
-        self.state: numpy.ndarray[Mark] = numpy.zeros(self.board_size + 1, dtype=numpy.uint8)
+        self.state: numpy.ndarray = numpy.zeros(self.board_size + 1, dtype=numpy.uint8)
         self.current_player: Mark = self.start_mark
         self.done: bool = False
 
         # set numpy random seed
         self.seed()
 
+    def next_player(self) -> Mark:
+        return Mark.X if self.current_player == Mark.O else Mark.O
+
     @logging.logged
-    def reset(self) -> numpy.ndarray[Mark]:
+    def reset(self) -> numpy.ndarray:
         """
         Reset the environment to it's initial state.
         :return: The initial state of the environment.
@@ -92,7 +95,7 @@ class TicTacToeEnv(gym.Env):
         return self.observation
 
     @logging.logged
-    def step(self, action: int) -> Tuple[numpy.ndarray[Mark], float, bool, Dict[str, Status]]:
+    def step(self, action: int) -> Tuple[numpy.ndarray, float, bool, Dict[str, Status]]:
         """
         Step environment by action.
         :param action: The location on the board to mark [1-9]
@@ -123,7 +126,7 @@ class TicTacToeEnv(gym.Env):
         :return: The state of the game.
         """
         self.state[-1] = self.current_player
-        self.current_player = "X" if self.current_player == "O" else "O"
+        self.current_player = self.next_player()
         return self.state
 
     def render(self, mode=None):
@@ -131,10 +134,12 @@ class TicTacToeEnv(gym.Env):
         Draw tictactoe board
         :param mode:  Only human rendering mode is available
         """
+        mark_to_string = {Mark.X: "X", Mark.O: "O", Mark.EMPTY: " "}
         if mode == "human":
-            marks = [str(index + 1) if mark is None else mark for index, mark in enumerate(self.state)]
+            marks = [str(index + 1) if mark == Mark.EMPTY else mark_to_string[mark] for index, mark in
+                     enumerate(self.state)]
         else:
-            marks = [" " if mark is None else mark for mark in self.state]
+            marks = [mark_to_string[mark] for mark in self.state]
 
         board_string = ""
         for j in range(0, 9, 3):
