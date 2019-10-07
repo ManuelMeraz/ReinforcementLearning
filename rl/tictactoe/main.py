@@ -6,7 +6,7 @@ import os
 import signal
 import sys
 import time
-from typing import Dict, Union
+from typing import Dict, Union, List, Tuple
 
 import numpy
 from tqdm import tqdm
@@ -32,12 +32,20 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
         Mark.O: player_o,
     }
 
+    env.render(mode="human")
+
     while True:
-        env.render(mode="human")
-        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
+        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.current_player]
         action: int = current_player.act(obs)
 
+        obs: numpy.ndarray
+        reward: float
+        done: bool
+        info: Dict[str, Status]
         obs, reward, done, info = env.step(action)
+        env.current_player = env.next_player()
+        obs[-1] = env.current_player
+        env.render(mode="human")
 
         if done:
             status: Status = info["status"]
@@ -69,23 +77,46 @@ def learn_from_game(args):
             Mark.O: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
         }
 
+        trajectory: List[Tuple[numpy.ndarray, float]] = [(obs.copy(), 0)]
+
         while True:
-            current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
+            current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.current_player]
             action: int = current_player.act(obs)
 
-            prev_obs = obs
+            obs: numpy.ndarray
+            reward: float
+            done: bool
+            info: Dict[str, Status]
             obs, reward, done, info = env.step(action)
+            env.current_player = env.next_player()
             current_player.learn(state=obs, reward=reward)
+            trajectory.append((obs.copy(), reward))
+            obs[-1] = env.current_player
+
 
             if done:
 
                 if info["status"] == Status.X_WINS:
-                    players[Mark.O].learn(state=prev_obs, reward=-1 * reward)
+                    players[Mark.O].state_values[tuple(trajectory[-2][0])].count -= 1
+                    players[Mark.O].previous_state = trajectory[-4][0].copy()
+                    players[Mark.O].learn(state=trajectory[-2][0].copy(), reward=-1 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players[Mark.X].learn(state=prev_obs, reward=-1 * reward)
+                    players[Mark.X].state_values[tuple(trajectory[-2][0])].count -= 1
+                    players[Mark.X].previous_state = trajectory[-4][0].copy()
+                    players[Mark.X].learn(state=trajectory[-2][0].copy(), reward=-1 * reward)
                 else:
-                    players[Mark.X].learn(state=prev_obs, reward=reward)
-                    players[Mark.O].learn(state=prev_obs, reward=reward)
+
+                    if env.current_player == Mark.O:
+                        players[Mark.X].state_values[tuple(trajectory[-1][0])].count -= 1
+                        players[Mark.X].learn(state=trajectory[-1][0].copy(), reward=reward)
+
+                        players[Mark.O].state_values[tuple(trajectory[-2][0])].count -= 1
+                        players[Mark.O].learn(state=trajectory[-2][0].copy(), reward=reward)
+                    else:
+                        players[Mark.X].state_values[tuple(trajectory[-2][0])].count -= 1
+                        players[Mark.X].learn(state=trajectory[-2][0].copy(), reward=reward)
+                        players[Mark.O].state_values[tuple(trajectory[-1][0])].count -= 1
+                        players[Mark.O].learn(state=trajectory[-1][0].copy(), reward=reward)
 
                 td_agent.merge(players[Mark.X])
                 td_agent.merge(players[Mark.O])
@@ -94,7 +125,7 @@ def learn_from_game(args):
     return td_agent
 
 
-def learn(main_agent: SmartAgent, num_games: int, num_agents: int):
+def learn(main_agent: SmartAgent, num_games: int, num_agents: int, policy_filename=None):
     """
     Pit agents against themselves tournament style. The winners survive.
     :param main_agent: The agent that will learn from playing games
@@ -124,8 +155,12 @@ def learn(main_agent: SmartAgent, num_games: int, num_agents: int):
         for agent in agents:
             main_agent.merge(agent)
 
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    filename = os.getcwd() + "/" + timestamp + ".policy"
+    if policy_filename:
+        filename = policy_filename
+    else:
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = os.getcwd() + "/" + timestamp + ".policy"
+
     save_state_values(main_agent.state_values, filename=filename)
 
 
@@ -193,10 +228,15 @@ def main():
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
+        if suboptions.with_policy:
+            policy = load_state_values(suboptions.with_policy)
+        else:
+            policy = None
         agent = SmartAgent(learning_rate=suboptions.learning_rate, exploratory_rate=suboptions.exploratory_rate,
-                           state_values=suboptions.with_policy)
-        learn(agent, num_games=suboptions.num_games, num_agents=suboptions.num_agents)
-    else:
+                           state_values=policy)
+
+        learn(agent, num_games=suboptions.num_games,
+              num_agents=suboptions.num_agents, policy_filename=suboptions.with_policy)
         print("No other options.")
 
 

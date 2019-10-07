@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy
 
@@ -14,7 +14,7 @@ class TemporalDifferenceAgent(LearningAgent):
     Where alpha is the learning rate at 1 / (N + 1)
     """
 
-    def __init__(self, learning_rate: float, state_values: Dict[bytes, Value] = None):
+    def __init__(self, learning_rate: float, state_values: Dict[Tuple[int], Value] = None):
         """
         Represents an agent learning with temporal difference
         :param learning_rate: How much to learn from the most recent action
@@ -27,15 +27,15 @@ class TemporalDifferenceAgent(LearningAgent):
 
         self.learning_rate: float = learning_rate
 
-        self._previous_state: numpy.ndarray = numpy.array(10)
-        self._previous_reward: float = 0
+        self._previous_state: numpy.ndarray = None
+        self._previous_reward: float = None
 
     @property
-    def state_values(self) -> Dict[bytes, Value]:
+    def state_values(self) -> Dict[Tuple[int], Value]:
         return self._state_values
 
     @state_values.setter
-    def state_values(self, state_values: Dict[bytes, Value]):
+    def state_values(self, state_values: Dict[Tuple[int], Value]):
         self._state_values = state_values
 
     @property
@@ -62,12 +62,13 @@ class TemporalDifferenceAgent(LearningAgent):
         """
 
         if self.previous_state is None and self._previous_reward is None:
-            self.previous_state = state
+            self.state_values[tuple(state)].count += 1
+            self.previous_state = state.copy()
             self._previous_reward = reward
             return
 
-        previous_value: Value = self.state_values[self.previous_state.tobytes()]
-        current_value: Value = self.state_values[state.tobytes()]
+        previous_value: Value = self.state_values[tuple(self.previous_state)]
+        current_value: Value = self.state_values[tuple(state)]
 
         current_value.count += 1
         current_value.value += reward
@@ -77,8 +78,8 @@ class TemporalDifferenceAgent(LearningAgent):
         # previous_value.value += self.learning_rate * (
         #         reward + current_value.value - previous_value.value)
 
-        self.state_values[state.tobytes()] = current_value
-        self.state_values[self.previous_state.tobytes()] = previous_value
+        self.state_values[tuple(state)] = current_value
+        self.state_values[tuple(self.previous_state)] = previous_value
 
-        self.previous_state = state
+        self.previous_state = state.copy()
         self._previous_reward = reward

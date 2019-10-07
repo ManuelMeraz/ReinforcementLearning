@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy
 
@@ -15,12 +15,12 @@ class LearningAgent(Agent):
 
     @property
     @abstractmethod
-    def state_values(self) -> Dict[bytes, Value]:
+    def state_values(self) -> Dict[Tuple[int], Value]:
         pass
 
     @state_values.setter
     @abstractmethod
-    def state_values(self, state_values: Dict[bytes, Value]):
+    def state_values(self, state_values: Dict[Tuple[int], Value]):
         pass
 
     @property

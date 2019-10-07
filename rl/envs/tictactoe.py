@@ -68,7 +68,7 @@ class TicTacToeEnv(gym.Env):
         # Each location on the board is part of the observation space
         # The last item is the current player's turn
         self.observation_space = gym.spaces.Discrete(self.board_size + 1)
-        self.start_mark = Mark.O
+        self.start_mark = Mark.X
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
 
@@ -104,17 +104,18 @@ class TicTacToeEnv(gym.Env):
         assert self.action_space.contains(action), f"Action not available in action space: {action}"
         self.game_ticks += 1
 
-        reward: float = 0.0
-        self.current_player = self.next_player()
         self.state[action]: Mark = self.current_player
         self.status: Status = game_status(self.state)
         self.info["status"]: Status = self.status
 
+        reward: float = 0.0
         if self.status != Status.IN_PROGRESS:
             self.done: bool = True
 
-            if self.status == Status.X_WINS or self.status == Status.O_WINS:
+            if self.status == Status.X_WINS:
                 reward: float = 1.0 / self.game_ticks
+            elif self.status == Status.O_WINS:
+                reward: float = 1.0 / (self.game_ticks - 1)
 
         return self.observation, reward, self.done, self.info
 

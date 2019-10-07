@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy
 
@@ -9,7 +9,7 @@ from rl.envs.tictactoe import Mark
 
 
 class SmartAgent(TemporalDifferenceAgent, EGreedyPolicyAgent):
-    def __init__(self, learning_rate: float, exploratory_rate: float, state_values: Dict[bytes, Value] = None):
+    def __init__(self, learning_rate: float, exploratory_rate: float, state_values: Dict[Tuple[int], Value] = None):
         TemporalDifferenceAgent.__init__(self, learning_rate=learning_rate, state_values=state_values)
         EGreedyPolicyAgent.__init__(self, exploratory_rate=exploratory_rate)
 
@@ -36,8 +36,7 @@ class SmartAgent(TemporalDifferenceAgent, EGreedyPolicyAgent):
         :param action: An integer representing an action available to the agent
         :return: The reward received for taking that action
         """
-        next_state: numpy.ndarray = self.transition_model(state, action, copy=True)
-        return self.state_values[next_state.tobytes()].value
+        return self.state_values[tuple(state)].value
 
     def available_actions(self, state: numpy.ndarray) -> numpy.ndarray:
         """
