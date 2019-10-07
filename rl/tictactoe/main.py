@@ -2,15 +2,18 @@
 import argparse
 import math
 import multiprocessing
+import os
 import signal
 import sys
-from typing import Dict, Tuple, Union
+import time
+from typing import Dict, Union
 
 import numpy
 from tqdm import tqdm
 
 from rl.envs.tictactoe import TicTacToeEnv, Status, Mark
 from rl.tictactoe import HumanAgent, BaseAgent, SmartAgent
+from rl.utils.io import load_state_values, save_state_values
 from rl.utils.logging import Logger
 
 
@@ -59,33 +62,33 @@ def learn_from_game(args):
 
     for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
         env = TicTacToeEnv()
-        obs: Tuple[Mark] = env.reset()
+        obs: numpy.ndarray = env.reset()
 
-        players: Dict[str, SmartAgent] = {
-            "X": SmartAgent('X', td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
-            "O": SmartAgent('O', td_agent.exploratory_rate, td_agent.learning_rate, td_agent.state_values),
+        players: Dict[Mark, SmartAgent] = {
+            Mark.X: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
+            Mark.O: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
         }
 
         while True:
-            current_player = obs["next_player"]
-            action: int = players[current_player].act(obs["board"])
+            current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
+            action: int = current_player.act(obs)
 
             prev_obs = obs
             obs, reward, done, info = env.step(action)
-            players[current_player].learn(state=obs["board"], reward=reward)
+            current_player.learn(state=obs, reward=reward)
 
             if done:
 
                 if info["status"] == Status.X_WINS:
-                    players["O"].learn(state=prev_obs["board"], reward=-1 * reward)
+                    players[Mark.O].learn(state=prev_obs, reward=-1 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players["X"].learn(state=prev_obs["board"], reward=-1 * reward)
+                    players[Mark.X].learn(state=prev_obs, reward=-1 * reward)
                 else:
-                    players["X"].learn(state=prev_obs["board"], reward=reward)
-                    players["O"].learn(state=prev_obs["board"], reward=reward)
+                    players[Mark.X].learn(state=prev_obs, reward=reward)
+                    players[Mark.O].learn(state=prev_obs, reward=reward)
 
-                td_agent.merge(players["X"])
-                td_agent.merge(players["O"])
+                td_agent.merge(players[Mark.X])
+                td_agent.merge(players[Mark.O])
                 break
 
     return td_agent
@@ -98,10 +101,12 @@ def learn(main_agent: SmartAgent, num_games: int, num_agents: int):
     :param num_games:  The number of games to play each other
     :param num_agents:  The number of games to play each other
     """
+    processes = multiprocessing.cpu_count()
+
+    if num_agents == 0:
+        num_agents = processes
 
     print(f"Learning! Number of games: {num_games} Number of agents: {num_agents}")
-
-    processes = multiprocessing.cpu_count()
 
     if num_agents < processes:
         processes = num_agents
@@ -109,7 +114,7 @@ def learn(main_agent: SmartAgent, num_games: int, num_agents: int):
     chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
         agents = [
-            (SmartAgent('X', main_agent.exploratory_rate, main_agent.learning_rate, main_agent.state_values),
+            (SmartAgent(main_agent.learning_rate, main_agent.exploratory_rate, main_agent.state_values),
              num_games, i, processes) for i in range(num_agents)]
 
         print("Playing games...")
@@ -119,7 +124,9 @@ def learn(main_agent: SmartAgent, num_games: int, num_agents: int):
         for agent in agents:
             main_agent.merge(agent)
 
-    SmartAgent.save_state_values(main_agent.state_values, main_agent.datafile)
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = os.getcwd() + "/" + timestamp + ".policy"
+    save_state_values(main_agent.state_values, filename=filename)
 
 
 def keyboard_interrupt_handler(signal, frame):
@@ -156,24 +163,23 @@ def main():
         player_x = agent_types[suboptions.X]
         player_o = agent_types[suboptions.O]
 
-        # if isinstance(player_o, SmartAgent) and suboptions.with_policy:
-        #     player_o.state_values = SmartAgent.load_state_values(suboptions.with_policy)
-        #     player_o.mark = 'O'
-        #
-        # if isinstance(player_x, SmartAgent) and suboptions.with_policy:
-        #     player_x.state_values = SmartAgent.load_state_values(suboptions.with_policy)
-        #     player_o.mark = 'X'
+        if isinstance(player_o, SmartAgent) and suboptions.with_policy:
+            player_o.state_values = load_state_values(suboptions.with_policy)
+            player_o.mark = 'O'
+
+        if isinstance(player_x, SmartAgent) and suboptions.with_policy:
+            player_x.state_values = load_state_values(suboptions.with_policy)
+            player_o.mark = 'X'
 
         play(player_x=player_x, player_o=player_o)
-
 
     elif options.command == "learn":
         subparser = subparsers.add_parser("learn",
                                           help="Pit two temporal agents against each other and generate a value map.")
         subparser.add_argument("-n", "--num-games",
-                               help="The number of games to play against each other.", type=int, default=10000)
+                               help="The number of games to play against each other.", type=int, default=1000)
         subparser.add_argument("-a", "--num-agents",
-                               help="The number of agents to pit against themselves.", type=int, default=24)
+                               help="The number of agents to pit against themselves.", type=int, default=0)
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                type=float,
                                default=0.1)
@@ -181,12 +187,14 @@ def main():
                                help="The amount to scale the learning of the temporal difference algorithm.",
                                type=float,
                                default=0.5)
+        subparser.add_argument("-p", "--with-policy", help="A data file containing a policy, generated from learning.",
+                               default=None)
         logger: Logger = Logger(parser=subparser)
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
-        agent = SmartAgent('X', exploratory_rate=suboptions.exploratory_rate,
-                           learning_rate=suboptions.learning_rate)
+        agent = SmartAgent(learning_rate=suboptions.learning_rate, exploratory_rate=suboptions.exploratory_rate,
+                           state_values=suboptions.with_policy)
         learn(agent, num_games=suboptions.num_games, num_agents=suboptions.num_agents)
     else:
         print("No other options.")

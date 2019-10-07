@@ -5,7 +5,7 @@ from typing import Dict
 import numpy
 
 from rl.agents.agent import Agent
-from rl.agents.learning import Value
+from .value import Value
 
 
 class LearningAgent(Agent):
