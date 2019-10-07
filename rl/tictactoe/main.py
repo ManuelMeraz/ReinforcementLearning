@@ -8,12 +8,13 @@ from typing import Dict, Tuple, Union
 
 from tqdm import tqdm
 
-from rl.agents import Human, Base, TemporalDifference
+from rl.agents import HumanPolicyAgent, RandomPolicyAgent, TemporalDifference
 from rl.envs.tictactoe import TicTacToeEnv, Status, Mark
-from rl.utils.logging_utils import Logger
+from rl.utils.logging import Logger
 
 
-def play(player_x: Union[Human, Base, TemporalDifference], player_o: Union[Human, Base, TemporalDifference]):
+def play(player_x: Union[HumanPolicyAgent, RandomPolicyAgent, TemporalDifference],
+         player_o: Union[HumanPolicyAgent, RandomPolicyAgent, TemporalDifference]):
     """
     Play game of TicTactoe
     :param player_x: Player X
@@ -22,16 +23,16 @@ def play(player_x: Union[Human, Base, TemporalDifference], player_o: Union[Human
     env = TicTacToeEnv()
     obs: Tuple[Mark] = env.reset()
 
-    players: Dict[str, Union[Human, Base, TemporalDifference]] = {
+    players: Dict[str, Union[HumanPolicyAgent, RandomPolicyAgent, TemporalDifference]] = {
         "X": player_x,
         "O": player_o,
     }
 
-    mode = 'human' if isinstance(player_x, Human) or isinstance(player_o, Human) else None
+    mode = 'human' if isinstance(player_x, HumanPolicyAgent) or isinstance(player_o, HumanPolicyAgent) else None
 
     while True:
         env.render(mode=mode)
-        current_player: Union[Human, Base, TemporalDifference] = players[obs["next_player"]]
+        current_player: Union[HumanPolicyAgent, RandomPolicyAgent, TemporalDifference] = players[obs["next_player"]]
         action: int = current_player.act(obs["board"])
 
         obs, reward, done, info = env.step(action)
@@ -73,17 +74,17 @@ def learn_from_game(args):
 
             prev_obs = obs
             obs, reward, done, info = env.step(action)
-            players[current_player].learn(board_state=obs["board"], reward=reward)
+            players[current_player].learn(state=obs["board"], reward=reward)
 
             if done:
 
                 if info["status"] == Status.X_WINS:
-                    players["O"].learn(board_state=prev_obs["board"], reward=-1 * reward)
+                    players["O"].learn(state=prev_obs["board"], reward=-1 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players["X"].learn(board_state=prev_obs["board"], reward=-1 * reward)
+                    players["X"].learn(state=prev_obs["board"], reward=-1 * reward)
                 else:
-                    players["X"].learn(board_state=prev_obs["board"], reward=reward)
-                    players["O"].learn(board_state=prev_obs["board"], reward=reward)
+                    players["X"].learn(state=prev_obs["board"], reward=reward)
+                    players["O"].learn(state=prev_obs["board"], reward=reward)
 
                 td_agent.merge(players["X"])
                 td_agent.merge(players["O"])
@@ -151,7 +152,7 @@ def main():
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
-        agentTypes = {"human": Human(), "base": Base(),
+        agentTypes = {"human": HumanPolicyAgent(), "base": RandomPolicyAgent(),
                       "td": TemporalDifference('X', exploratory_rate=0.0, learning_rate=0.5)}
 
         player_x = agentTypes[suboptions.X]
