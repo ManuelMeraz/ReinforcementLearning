@@ -58,8 +58,8 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
 
                 print("Playing new game.")
 
-            env.render(mode="human")
             obs = env.reset()
+            env.render(mode="human")
 
 
 def learn_from_game(args):
