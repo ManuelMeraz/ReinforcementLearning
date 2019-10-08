@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy
 
 from rl.agents.agent import Agent
-from .value import Value
+from rl.reprs.value import Value
 
 
 class LearningAgent(Agent):
@@ -15,12 +15,12 @@ class LearningAgent(Agent):
 
     @property
     @abstractmethod
-    def state_values(self) -> Dict[Tuple[int], Value]:
+    def state_values(self) -> Dict[Tuple[Union[int, float]], Value]:
         pass
 
     @state_values.setter
     @abstractmethod
-    def state_values(self, state_values: Dict[Tuple[int], Value]):
+    def state_values(self, state_values: Dict[Tuple[Union[int, float]], Value]):
         pass
 
     @property

@@ -1,13 +1,13 @@
 #! /usr/bin/env python3
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import pandas
 
-from rl.agents.learning import Value
+from rl.reprs import Value
 
 
-def load_state_values(filename: str) -> Dict[Tuple[int], Value]:
+def load_state_values(filename: str) -> Dict[Tuple[Union[int, float]], Value]:
     """
     Load data from csv file and convert it to state values
     :param filename: The name of a csv file containing the data
@@ -21,7 +21,7 @@ def load_state_values(filename: str) -> Dict[Tuple[int], Value]:
     return state_values
 
 
-def save_state_values(state_values: Dict[Tuple[int], Value], filename: str):
+def save_state_values(state_values: Dict[Tuple[Union[int, float]], Value], filename: str):
     """
     Save the state values into a csv file
     :param state_values: The state value mapping

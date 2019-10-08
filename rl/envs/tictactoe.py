@@ -23,30 +23,30 @@ class Status(enum.IntEnum):
     DRAW = 3
 
 
-def game_status(observation: numpy.ndarray) -> Status:
+def game_status(obs: numpy.ndarray) -> Status:
     """
     Determine the status of the game
-    :param observation: The state of the board along with the player who just took a turn
+    :param obs: The state of the board along with the player who just took a turn
     :returns: Status
     """
 
     player_win_status = {Mark.X: Status.X_WINS, Mark.O: Status.O_WINS}
 
     for i in range(3):
-        if observation[i] and len(set(observation[i:9:3])) == 1:
-            return player_win_status[observation[i]]
+        if obs[i] and len(set(obs[i:9:3])) == 1:
+            return player_win_status[obs[i]]
 
     for i in range(0, 9, 3):
-        if observation[i] and len(set(observation[i:i + 3])) == 1:
-            return player_win_status[observation[i]]
+        if obs[i] and len(set(obs[i:i + 3])) == 1:
+            return player_win_status[obs[i]]
 
-    if observation[0] and len(set(observation[0:9:4])) == 1:
-        return player_win_status[observation[0]]
+    if obs[0] and len(set(obs[0:9:4])) == 1:
+        return player_win_status[obs[0]]
 
-    if observation[2] and len(set(observation[2:8:2])) == 1:
-        return player_win_status[observation[2]]
+    if obs[2] and len(set(obs[2:8:2])) == 1:
+        return player_win_status[obs[2]]
 
-    if Mark.EMPTY in observation:
+    if Mark.EMPTY in obs:
         return Status.IN_PROGRESS
 
     return Status.DRAW
@@ -82,7 +82,6 @@ class TicTacToeEnv(gym.Env):
     def next_player(self) -> Mark:
         return Mark.X if self.current_player == Mark.O else Mark.O
 
-    @logging.logged
     def reset(self) -> numpy.ndarray:
         """
         Reset the environment to it's initial state.
@@ -94,7 +93,6 @@ class TicTacToeEnv(gym.Env):
         self.game_ticks: int = 0
         return self.observation
 
-    @logging.logged
     def step(self, action: int) -> Tuple[numpy.ndarray, float, bool, Dict[str, Status]]:
         """
         Step environment by action.

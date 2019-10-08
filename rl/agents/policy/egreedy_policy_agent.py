@@ -16,13 +16,15 @@ class EGreedyPolicyAgent(PolicyAgent):
         self.exploratory_rate = exploratory_rate
 
     @abstractmethod
-    def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False) -> numpy.ndarray:
+    def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False,
+                         reverse: bool = False) -> numpy.ndarray:
         """
         State transition model that describes how the environment state changes when the
         agent performs an action depending on the action and the current state.
         :param state: The state of the environment
         :param action: An action available to the agent
         :param copy: When applying the action to the state, do so with a copy or apply it directly
+        :param reverse: Reverse the action passed in
         """
         pass
 
@@ -71,8 +73,9 @@ class EGreedyPolicyAgent(PolicyAgent):
         max_index: int = 0
 
         for index, action in enumerate(available_actions):
-            next_board_state: numpy.ndarray = self.transition_model(state, action, copy=True)
-            next_value: float = self.value_model(next_board_state, action)
+            next_state: numpy.ndarray = self.transition_model(state, action)
+            next_value: float = self.value_model(next_state, action)
+            state = self.transition_model(next_state, action, reverse=True)
 
             if next_value > max_value:
                 max_index: int = index

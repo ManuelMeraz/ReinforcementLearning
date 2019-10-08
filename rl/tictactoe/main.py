@@ -6,7 +6,7 @@ import os
 import signal
 import sys
 import time
-from typing import Dict, Union, List, Tuple
+from typing import Dict, Union
 
 import numpy
 from tqdm import tqdm
@@ -68,17 +68,15 @@ def learn_from_game(args):
     index = args[2]
     num_cpus = args[3]
 
+    env = TicTacToeEnv()
+    obs: numpy.ndarray = env.reset()
+
+    players: Dict[Mark, SmartAgent] = {
+        Mark.X: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
+        Mark.O: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
+    }
+
     for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
-        env = TicTacToeEnv()
-        obs: numpy.ndarray = env.reset()
-
-        players: Dict[Mark, SmartAgent] = {
-            Mark.X: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
-            Mark.O: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
-        }
-
-        trajectory: List[Tuple[numpy.ndarray, float]] = [(obs.copy(), 0)]
-
         while True:
             current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.current_player]
             action: int = current_player.act(obs)
@@ -90,47 +88,33 @@ def learn_from_game(args):
             obs, reward, done, info = env.step(action)
             env.current_player = env.next_player()
             current_player.learn(state=obs, reward=reward)
-            trajectory.append((obs.copy(), reward))
             obs[-1] = env.current_player
 
-
             if done:
-
                 if info["status"] == Status.X_WINS:
-                    players[Mark.O].state_values[tuple(trajectory[-2][0])].count -= 1
-                    players[Mark.O].previous_state = trajectory[-4][0].copy()
-                    players[Mark.O].learn(state=trajectory[-2][0].copy(), reward=-1 * reward)
+                    players[Mark.O].learn(state=obs, reward=-2 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players[Mark.X].state_values[tuple(trajectory[-2][0])].count -= 1
-                    players[Mark.X].previous_state = trajectory[-4][0].copy()
-                    players[Mark.X].learn(state=trajectory[-2][0].copy(), reward=-1 * reward)
+                    players[Mark.X].learn(state=obs, reward=-2 * reward)
                 else:
+                    players[Mark.X].learn(state=obs, reward=reward)
+                    players[Mark.O].learn(state=obs, reward=reward)
 
-                    if env.current_player == Mark.O:
-                        players[Mark.X].state_values[tuple(trajectory[-1][0])].count -= 1
-                        players[Mark.X].learn(state=trajectory[-1][0].copy(), reward=reward)
-
-                        players[Mark.O].state_values[tuple(trajectory[-2][0])].count -= 1
-                        players[Mark.O].learn(state=trajectory[-2][0].copy(), reward=reward)
-                    else:
-                        players[Mark.X].state_values[tuple(trajectory[-2][0])].count -= 1
-                        players[Mark.X].learn(state=trajectory[-2][0].copy(), reward=reward)
-                        players[Mark.O].state_values[tuple(trajectory[-1][0])].count -= 1
-                        players[Mark.O].learn(state=trajectory[-1][0].copy(), reward=reward)
-
-                td_agent.merge(players[Mark.X])
-                td_agent.merge(players[Mark.O])
+                obs = env.reset()
                 break
+
+    td_agent.merge(players[Mark.X])
+    td_agent.merge(players[Mark.O])
 
     return td_agent
 
 
-def learn(main_agent: SmartAgent, num_games: int, num_agents: int, policy_filename=None):
+def learn(main_agent: SmartAgent, num_games: int, num_agents: int, policy_filename: str = None):
     """
     Pit agents against themselves tournament style. The winners survive.
     :param main_agent: The agent that will learn from playing games
     :param num_games:  The number of games to play each other
     :param num_agents:  The number of games to play each other
+    :param policy_filename: The filename to save the learned policy to
     """
     processes = multiprocessing.cpu_count()
 
