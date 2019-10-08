@@ -35,16 +35,15 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
     env.render(mode="human")
 
     while True:
-        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.current_player]
+        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
         action: int = current_player.act(obs)
 
         obs: numpy.ndarray
         reward: float
         done: bool
         info: Dict[str, Status]
+
         obs, reward, done, info = env.step(action)
-        env.current_player = env.next_player()
-        obs[-1] = env.current_player
         env.render(mode="human")
 
         if done:
@@ -78,17 +77,16 @@ def learn_from_game(args):
 
     for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
         while True:
-            current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.current_player]
+            current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
             action: int = current_player.act(obs)
 
             obs: numpy.ndarray
             reward: float
             done: bool
             info: Dict[str, Status]
+
             obs, reward, done, info = env.step(action)
-            env.current_player = env.next_player()
             current_player.learn(state=obs, reward=reward)
-            obs[-1] = env.current_player
 
             if done:
                 if info["status"] == Status.X_WINS:

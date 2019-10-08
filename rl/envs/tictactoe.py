@@ -68,7 +68,7 @@ class TicTacToeEnv(gym.Env):
         # Each location on the board is part of the observation space
         # The last item is the current player's turn
         self.observation_space = gym.spaces.Discrete(self.board_size + 1)
-        self.start_mark = Mark.X
+        self.start_mark = Mark.O
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
 
@@ -80,7 +80,9 @@ class TicTacToeEnv(gym.Env):
         self.seed()
 
     def next_player(self) -> Mark:
-        return Mark.X if self.current_player == Mark.O else Mark.O
+        self.current_player = Mark.X if self.current_player == Mark.O else Mark.O
+        self.state[-1] = self.current_player
+        return self.current_player
 
     def reset(self) -> numpy.ndarray:
         """
