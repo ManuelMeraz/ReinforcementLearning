@@ -27,6 +27,11 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
     env = TicTacToeEnv()
     obs: numpy.ndarray = env.reset()
 
+    if not isinstance(player_x, HumanAgent) and not isinstance(player_o, HumanAgent):
+        not_human = True
+    else:
+        not_human = False
+
     players: Dict[Mark, Union[HumanAgent, BaseAgent, SmartAgent]] = {
         Mark.X: player_x,
         Mark.O: player_o,
@@ -44,7 +49,11 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
         info: Dict[str, Status]
 
         obs, reward, done, info = env.step(action)
+        if isinstance(current_player, SmartAgent):
+            current_player.learn(state=obs, reward=reward)
         env.render(mode="human")
+        if not_human:
+            input("Press enter to continue...")
 
         if done:
             status: Status = info["status"]
@@ -175,7 +184,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
 
         agent_types = {"human": HumanAgent(), "base": BaseAgent(),
-                       "smart": SmartAgent(learning_rate=0.5, exploratory_rate=0.0)}
+                       "smart": SmartAgent(learning_rate=0.5, exploratory_rate=0.1)}
 
         player_x = agent_types[suboptions.X]
         player_o = agent_types[suboptions.O]
