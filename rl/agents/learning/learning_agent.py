@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import Dict, Tuple, Union
 
 from rl.agents.agent import Agent
@@ -17,7 +17,7 @@ class LearningAgent(Agent):
         self.previous_transition = None
 
         if transitions is None:
-            self.transitions = defaultdict(lambda: defaultdict(int))
+            self.transitions = defaultdict(Counter)
         else:
             self.transitions = transitions
 
@@ -70,3 +70,6 @@ class LearningAgent(Agent):
                 value.count = total_count / 2
 
             self.state_values[state] = value
+
+        for state_action, counts in agent.transitions.items():
+            self.transitions[state_action] += counts

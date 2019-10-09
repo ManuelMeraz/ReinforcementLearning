@@ -14,7 +14,7 @@ from tqdm import tqdm
 from rl.envs.tictactoe import TicTacToeEnv, Status, Mark
 from rl.reprs import Transition
 from rl.tictactoe import HumanAgent, BaseAgent, SmartAgent
-from rl.utils.io import load_state_values, save_state_values
+from rl.utils.io import load_learning_agent, save_learning_agent
 from rl.utils.logging import Logger
 
 
@@ -98,16 +98,15 @@ def learn_from_game(args):
             info: Dict[str, Status]
 
             obs, reward, done, info = env.step(action)
-            current_player.learn_value(current_state=obs, reward=reward)
+
+            transition = Transition(state=obs, action=action, reward=reward)
+            current_player.learn(transition)
 
             if done:
                 if info["status"] == Status.X_WINS:
-                    players[Mark.O].learn_value(current_state=obs, reward=-2 * reward)
+                    players[Mark.O].learn(transition)
                 elif info["status"] == Status.O_WINS:
-                    players[Mark.X].learn_value(current_state=obs, reward=-2 * reward)
-                else:
-                    players[Mark.X].learn_value(current_state=obs, reward=reward)
-                    players[Mark.O].learn_value(current_state=obs, reward=reward)
+                    players[Mark.X].learn(transition)
 
                 obs = env.reset()
                 break
@@ -153,9 +152,9 @@ def learn(main_agent: SmartAgent, num_games: int, num_agents: int, policy_filena
         filename = policy_filename
     else:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = os.getcwd() + "/" + timestamp + ".policy"
+        filename = os.getcwd() + "/" + timestamp + ".json"
 
-    save_state_values(main_agent.state_values, filename=filename)
+    save_learning_agent(main_agent, filename=filename)
 
 
 def keyboard_interrupt_handler(signal, frame):
@@ -193,12 +192,10 @@ def main():
         player_o = agent_types[suboptions.O]
 
         if isinstance(player_o, SmartAgent) and suboptions.with_policy:
-            player_o.state_values = load_state_values(suboptions.with_policy)
-            player_o.mark = 'O'
+            player_o.state_values, player_o.transitions = load_learning_agent(suboptions.with_policy)
 
         if isinstance(player_x, SmartAgent) and suboptions.with_policy:
-            player_x.state_values = load_state_values(suboptions.with_policy)
-            player_o.mark = 'X'
+            player_x.state_values, player_x.transitions = load_learning_agent(suboptions.with_policy)
 
         play(player_x=player_x, player_o=player_o)
 
@@ -223,11 +220,11 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
 
         if suboptions.with_policy:
-            policy = load_state_values(suboptions.with_policy)
+            state_values, transitions = load_learning_agent(suboptions.with_policy)
         else:
             policy = None
         agent = SmartAgent(learning_rate=suboptions.learning_rate, exploratory_rate=suboptions.exploratory_rate,
-                           state_values=policy)
+                           state_values=state_values, transitions=transitions)
 
         learn(agent, num_games=suboptions.num_games,
               num_agents=suboptions.num_agents, policy_filename=suboptions.with_policy)

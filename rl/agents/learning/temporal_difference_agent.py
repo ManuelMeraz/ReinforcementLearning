@@ -13,13 +13,14 @@ class TemporalDifferenceAgent(LearningAgent):
     Where alpha is the learning rate at 1 / (N + 1)
     """
 
-    def __init__(self, learning_rate: float, state_values: Dict[Tuple[Union[int, float]], Value] = None):
+    def __init__(self, learning_rate: float, state_values: Dict[Tuple[Union[int, float]], Value] = None,
+                 transitions=None):
         """
         Represents an agent learning with temporal difference
         :param learning_rate: How much to learn from the most recent action
         :param state_values: A mapping of states to and their associated values
         """
-        super().__init__()
+        super().__init__(transitions=transitions)
         if not state_values:
             self._state_values = defaultdict(Value)
         else:

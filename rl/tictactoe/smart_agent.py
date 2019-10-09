@@ -10,8 +10,9 @@ from rl.reprs import Value
 
 class SmartAgent(TemporalDifferenceAgent, EGreedyPolicyAgent):
     def __init__(self, learning_rate: float, exploratory_rate: float,
-                 state_values: Dict[Tuple[Union[int, float]], Value] = None):
-        TemporalDifferenceAgent.__init__(self, learning_rate=learning_rate, state_values=state_values)
+                 state_values: Dict[Tuple[Union[int, float]], Value] = None, transitions=None):
+        TemporalDifferenceAgent.__init__(self, learning_rate=learning_rate, state_values=state_values,
+                                         transitions=transitions)
         EGreedyPolicyAgent.__init__(self, exploratory_rate=exploratory_rate)
 
     def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False,
@@ -33,7 +34,19 @@ class SmartAgent(TemporalDifferenceAgent, EGreedyPolicyAgent):
             next_state[action] = Mark.EMPTY
         else:
             next_state[action] = state[-1]
-        return next_state
+        state_counts = self.transitions[(*next_state, action)]
+
+        if not state_counts:
+            next_state[action] = state[-1]
+            return next_state
+
+        states = list(state_counts.keys())
+        counts = numpy.array(list(state_counts.values()))
+
+        sum = counts.sum()
+        counts = counts / sum
+        index = numpy.random.choice(numpy.arange(len(states)), p=counts)
+        return numpy.array(states[index])
 
     def value_model(self, state: numpy.ndarray, action: int) -> float:
         """
