@@ -12,6 +12,7 @@ import numpy
 from tqdm import tqdm
 
 from rl.envs.tictactoe import TicTacToeEnv, Status, Mark
+from rl.reprs import Transition
 from rl.tictactoe import HumanAgent, BaseAgent, SmartAgent
 from rl.utils.io import load_state_values, save_state_values
 from rl.utils.logging import Logger
@@ -49,8 +50,10 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
         info: Dict[str, Status]
 
         obs, reward, done, info = env.step(action)
+
         if isinstance(current_player, SmartAgent):
-            current_player.learn(state=obs, reward=reward)
+            current_player.learn(Transition(state=obs, action=action, reward=reward))
+
         env.render(mode="human")
         if not_human:
             input("Press enter to continue...")
@@ -95,16 +98,16 @@ def learn_from_game(args):
             info: Dict[str, Status]
 
             obs, reward, done, info = env.step(action)
-            current_player.learn(state=obs, reward=reward)
+            current_player.learn_value(current_state=obs, reward=reward)
 
             if done:
                 if info["status"] == Status.X_WINS:
-                    players[Mark.O].learn(state=obs, reward=-2 * reward)
+                    players[Mark.O].learn_value(current_state=obs, reward=-2 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players[Mark.X].learn(state=obs, reward=-2 * reward)
+                    players[Mark.X].learn_value(current_state=obs, reward=-2 * reward)
                 else:
-                    players[Mark.X].learn(state=obs, reward=reward)
-                    players[Mark.O].learn(state=obs, reward=reward)
+                    players[Mark.X].learn_value(current_state=obs, reward=reward)
+                    players[Mark.O].learn_value(current_state=obs, reward=reward)
 
                 obs = env.reset()
                 break

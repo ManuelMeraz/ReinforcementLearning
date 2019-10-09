@@ -1,5 +1,6 @@
+gym
+gym-minigrid
+numpy
+pandas
 pytest
 tqdm
-numpy
-gym
-pandas

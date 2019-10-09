@@ -1,2 +1,2 @@
-from .trajectory import Trajectory
+from .transition import Transition
 from .value import Value

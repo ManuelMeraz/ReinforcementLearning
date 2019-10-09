@@ -1,10 +1,10 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
+from collections import defaultdict
 from typing import Dict, Tuple, Union
 
-import numpy
-
 from rl.agents.agent import Agent
+from rl.reprs import Transition
 from rl.reprs.value import Value
 
 
@@ -12,6 +12,14 @@ class LearningAgent(Agent):
     """
     The learning agent implements a learning method and is used for purposes of building a state value map
     """
+
+    def __init__(self, transitions=None):
+        self.previous_transition = None
+
+        if transitions is None:
+            self.transitions = defaultdict(lambda: defaultdict(int))
+        else:
+            self.transitions = transitions
 
     @property
     @abstractmethod
@@ -23,29 +31,24 @@ class LearningAgent(Agent):
     def state_values(self, state_values: Dict[Tuple[Union[int, float]], Value]):
         pass
 
-    @property
     @abstractmethod
-    def previous_state(self) -> numpy.ndarray:
+    def learn_value(self, state: Tuple[Union[int, float]], reward: float):
         pass
 
-    @previous_state.setter
-    @abstractmethod
-    def previous_state(self, state: numpy.ndarray):
-        pass
+    def learn(self, transition: Transition):
+        if self.previous_transition is None:
+            self.previous_transition = transition
+            self.state_values[transition.state].count += 1
+            return
 
-    @property
-    @abstractmethod
-    def previous_reward(self) -> float:
-        pass
+        self.learn_value(transition.state, transition.reward)
+        self.learn_transition(transition)
+        self.previous_transition = transition
 
-    @previous_reward.setter
-    @abstractmethod
-    def previous_reward(self, reward: float):
-        pass
-
-    @abstractmethod
-    def learn(self, state: numpy.ndarray, reward: float):
-        pass
+    def learn_transition(self, transition: Transition):
+        state_action_pair = (*self.previous_transition.state, self.previous_transition.action)
+        transition_counts = self.transitions[state_action_pair]
+        transition_counts[transition.state] += 1
 
     def merge(self, agent):
         """
