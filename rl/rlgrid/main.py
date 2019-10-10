@@ -117,7 +117,7 @@ def play(agent, env, episodes=100):
             # # If the window was closed
             if renderer.window is None:
                 break
-            time.sleep(0.05)
+            # time.sleep(0.01)
 
             if done:
                 agent.reset()
@@ -192,7 +192,7 @@ def main():
                                default="smart")
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                type=float,
-                               default=0.2)
+                               default=0.5)
         subparser.add_argument("-l", "--learning-rate", help="The learning rate for TD learning.",
                                type=float,
                                default=0.5)
