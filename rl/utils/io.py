@@ -44,7 +44,8 @@ def save_learning_agent(agent, filename: str):
     data = {"state_values": [], "transitions": []}
 
     for state, value in agent.state_values.items():
-        data["state_values"].append([[float(num) for num in state], value.__dict__])
+        if value.count > 0:
+            data["state_values"].append([[float(num) for num in state], value.__dict__])
 
     for state_action, transition_counts in agent.transitions.items():
         transition = [[float(num) for num in state_action], []]

@@ -14,9 +14,9 @@ class LearningAgent(Agent):
     """
 
     def __init__(self, transitions=None):
-        self.previous_transition = None
+        self.trajectory = []
 
-        if transitions is None:
+        if not transitions:
             self.transitions = defaultdict(Counter)
         else:
             self.transitions = transitions
@@ -32,23 +32,32 @@ class LearningAgent(Agent):
         pass
 
     @abstractmethod
-    def learn_value(self, state: Tuple[Union[int, float]], reward: float):
+    def learn_value(self):
         pass
 
+    def reset(self):
+        self.trajectory.clear()
+
     def learn(self, transition: Transition):
-        if self.previous_transition is None:
-            self.previous_transition = transition
+        if not self.trajectory:
             self.state_values[transition.state].count += 1
+            self.trajectory.append(transition)
             return
 
-        self.learn_value(transition.state, transition.reward)
-        self.learn_transition(transition)
-        self.previous_transition = transition
+        self.trajectory.append(transition)
+        self.learn_value()
+        self.learn_transition()
 
-    def learn_transition(self, transition: Transition):
-        state_action_pair = (*self.previous_transition.state, self.previous_transition.action)
+    def learn_transition(self):
+        transition = self.trajectory.pop()
+        previous_transition = self.trajectory.pop()
+
+        state_action_pair = (*previous_transition.state, previous_transition.action)
         transition_counts = self.transitions[state_action_pair]
         transition_counts[transition.state] += 1
+
+        self.trajectory.append(previous_transition)
+        self.trajectory.append(transition)
 
     def merge(self, agent):
         """

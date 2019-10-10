@@ -19,5 +19,6 @@ setuptools.setup(
     license="MIT",
     packages=setuptools.find_packages(),
     install_requires=reqs.strip().split("\n"),
-    entry_points={"console_scripts": ["tictactoe = rl.tictactoe.main:main"]},
+    entry_points={"console_scripts": ["tictactoe = rl.tictactoe.main:main",
+                                      "rlgrid = rl.rlgrid.main:main"]},
 )

@@ -28,9 +28,6 @@ class TemporalDifferenceAgent(LearningAgent):
 
         self.learning_rate: float = learning_rate
 
-        self._previous_state: Tuple[Union[int, float]] = None
-        self._previous_reward: float = None
-
     @property
     def state_values(self) -> Dict[Tuple[Union[int, float]], Value]:
         return self._state_values
@@ -39,23 +36,28 @@ class TemporalDifferenceAgent(LearningAgent):
     def state_values(self, state_values: Dict[Tuple[Union[int, float]], Value]):
         self._state_values = state_values
 
-    def learn_value(self, current_state: Tuple[Union[int, float]], reward: float):
+    def learn_value(self):
         """
         Apply temporal difference learning and update the state and values of this agent
-        :param current_state: The current state of the board along with the current mark this agent represents
-        :param reward: The reward having taken the most recent action
         """
 
-        previous_value: Value = self.state_values[self.previous_transition.state]
-        current_value: Value = self.state_values[current_state]
-
+        current_transition = self.trajectory[-1]
+        current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
-        current_value.value += reward
+        current_value.value += current_transition.reward
 
-        previous_value.value += 1 / (previous_value.count + 1) * (
-                current_value.value - previous_value.value)
-        # previous_value.value += self.learning_rate * (
-        #         reward + current_value.value - previous_value.value)
+        if current_value.value != 0:
+            for i in range(-2, -1 * len(self.trajectory), -1):
 
-        self.state_values[current_state] = current_value
-        self.state_values[self.previous_transition.state] = previous_value
+                previous_transition = self.trajectory[i - 1]
+                previous_value: Value = self.state_values[previous_transition.state]
+
+                previous_value.value += 1 / (previous_value.count + 1) * (
+                        current_value.value - previous_value.value)
+
+                self.state_values[previous_transition.state] = previous_value
+
+                current_transition = previous_transition
+                current_value: Value = self.state_values[current_transition.state]
+
+        self.state_values[current_transition.state] = current_value
