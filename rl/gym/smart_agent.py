@@ -8,13 +8,13 @@ from rl.reprs import Value
 
 
 class SmartAgent(TemporalDifferenceAgent, EGreedyPolicyAgent):
-    def __init__(self, actions, learning_rate: float, exploratory_rate: float,
+    def __init__(self, action_space, learning_rate: float, exploratory_rate: float,
                  state_values: Dict[Tuple[Union[int, float]], Value] = None, transitions=None):
         TemporalDifferenceAgent.__init__(self, learning_rate=learning_rate, state_values=state_values,
                                          transitions=transitions)
         EGreedyPolicyAgent.__init__(self, exploratory_rate=exploratory_rate)
 
-        self.actions = [action for action in actions]
+        self.actions = [i for i in range(action_space.n)]
 
     def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False) -> numpy.ndarray:
         """
@@ -64,5 +64,4 @@ class SmartAgent(TemporalDifferenceAgent, EGreedyPolicyAgent):
         :param state: A tuple representing the state of the environment
         :return: A list of actions each representing an action available to the agent
         """
-        self.actions = [0,1,2]
         return self.actions

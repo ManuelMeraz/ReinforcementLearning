@@ -15,20 +15,13 @@ import numpy
 from tqdm import tqdm
 
 from rl.reprs import Transition
-from rl.rlgrid import SmartAgent, HumanAgent, BaseAgent
+from rl.gym import SmartAgent, HumanAgent, BaseAgent
 from rl.utils.io import save_learning_agent, load_learning_agent
 from rl.utils.logging import Logger
 
 
 def get_state(obs, env):
-    state = numpy.concatenate((obs["image"], obs["direction"], ), axis=None)
-    # if env.carrying is None:
-    #     carrying = 0
-    # else:
-    #     carrying = 1
-    # state = numpy.concatenate((env.agent_pos, env.agent_dir, carrying), axis=None)
-    # state = numpy.concatenate((env.agent_pos, obs["direction"],), axis=None)
-    return state
+    return obs
 
 
 def learn_from_game(args):
@@ -84,7 +77,7 @@ def learn(main_agent: SmartAgent, env_name: str, num_episodes: int, num_agents: 
     chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
         agents = [
-            (SmartAgent(actions=main_agent.actions, exploratory_rate=main_agent.exploratory_rate,
+            (SmartAgent(action_space=main_agent.actions, exploratory_rate=main_agent.exploratory_rate,
                         learning_rate=main_agent.learning_rate, state_values=main_agent.state_values,
                         transitions=main_agent.transitions),
              num_episodes, i, processes, env_name) for i in range(num_agents)]
@@ -110,7 +103,7 @@ def play(agent, env, episodes=100):
 
     for _ in range(episodes):
         while True:
-            renderer = env.render()
+            env.render()
             action = agent.act(state)
             prior_state = state
             obs, reward, done, info = env.step(action)
@@ -118,10 +111,7 @@ def play(agent, env, episodes=100):
             transition = Transition(state=prior_state, action=action, reward=reward)
             agent.learn(transition)
 
-            # # If the window was closed
-            if renderer.window is None:
-                break
-            # time.sleep(0.1)
+            time.sleep(0.1)
 
             if done:
                 agent.reset()
@@ -162,7 +152,7 @@ def main():
             "--env-name",
             dest="env_name",
             help="gym environment to load",
-            default='MiniGrid-Empty-5x5-v0'
+            default='CartPole-v0'
         )
 
         logger: Logger = Logger(parser=subparser)
@@ -170,8 +160,8 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
         env = gym.make(suboptions.env_name)
 
-        agent_types = {"human": HumanAgent(), "base": BaseAgent(env.actions),
-                       "smart": SmartAgent(actions=env.actions, exploratory_rate=suboptions.exploratory_rate,
+        agent_types = {"human": HumanAgent(), "base": BaseAgent(env.action_space),
+                       "smart": SmartAgent(action_space=env.action_space, exploratory_rate=suboptions.exploratory_rate,
                                            learning_rate=suboptions.learning_rate)}
 
         agent = agent_types[suboptions.agent]
@@ -206,7 +196,7 @@ def main():
             "--env-name",
             dest="env_name",
             help="gym environment to load",
-            default='MiniGrid-Empty-5x5-v0'
+            default='CartPole-v0'
         )
         logger: Logger = Logger(parser=subparser)
 
@@ -226,7 +216,7 @@ def main():
         else:
             state_values, transitions = None, None
 
-        agent = SmartAgent(actions=env.actions, exploratory_rate=suboptions.exploratory_rate,
+        agent = SmartAgent(action_space=env.action_space, exploratory_rate=suboptions.exploratory_rate,
                            learning_rate=suboptions.learning_rate,
                            state_values=state_values, transitions=transitions)
 
