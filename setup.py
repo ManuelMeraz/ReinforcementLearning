@@ -21,5 +21,5 @@ setuptools.setup(
     install_requires=reqs.strip().split("\n"),
     entry_points={"console_scripts": ["tictactoe = rl.tictactoe.main:main",
                                       "rlgrid = rl.rlgrid.main:main",
-                                      "gym = rl.gym.main:main"]},
+                                      "rlgym = rl.rlgym.main:main"]},
 )

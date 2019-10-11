@@ -38,20 +38,24 @@ class TemporalDifferenceAveragingAgent(LearningAgent):
         """
         Apply temporal difference learning and update the state and values of this agent
         """
-        current_transition = self.trajectory.pop()
+
+        current_transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
-
-        previous_transition = self.trajectory.pop()
-        previous_value: Value = self.state_values[previous_transition.state]
-
         current_value.value += current_transition.reward
 
-        previous_value.value += 1 / (previous_value.count + 1) * (
-                current_value.value - previous_value.value)
+        if current_value.value != 0:
+            for i in range(-2, -1 * len(self.trajectory), -1):
 
-        self.state_values[previous_transition.state] = previous_value
-        self.trajectory.append(previous_transition)
+                previous_transition = self.trajectory[i - 1]
+                previous_value: Value = self.state_values[previous_transition.state]
+
+                previous_value.value += 1 / (previous_value.count + 1) * (
+                        current_value.value - previous_value.value)
+
+                self.state_values[previous_transition.state] = previous_value
+
+                current_transition = previous_transition
+                current_value: Value = self.state_values[current_transition.state]
 
         self.state_values[current_transition.state] = current_value
-        self.trajectory.append(current_transition)

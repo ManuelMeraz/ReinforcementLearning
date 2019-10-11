@@ -15,7 +15,7 @@ import numpy
 from tqdm import tqdm
 
 from rl.reprs import Transition
-from rl.rlgrid import SmartAgent, HumanAgent, BaseAgent
+from rl.rlgrid import SmartAgent
 from rl.utils.io import save_learning_agent, load_learning_agent
 from rl.utils.logging import Logger
 
@@ -121,7 +121,7 @@ def play(agent, env, episodes=100):
             # # If the window was closed
             if renderer.window is None:
                 break
-            # time.sleep(0.1)
+            # time.sleep(0.5)
 
             if done:
                 agent.reset()
@@ -148,8 +148,6 @@ def main():
 
     if options.command == "play":
         subparser = subparsers.add_parser("play", help="Play a game of TicTacToe!")
-        subparser.add_argument("-a", "--agent", choices=["human", "base", "smart"], help="Human, Base, or Smart",
-                               default="smart")
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                type=float,
                                default=0.05)
@@ -161,7 +159,7 @@ def main():
             "-env",
             "--env-name",
             dest="env_name",
-            help="gym environment to load",
+            help="rlgym environment to load",
             default='MiniGrid-Empty-5x5-v0'
         )
 
@@ -170,11 +168,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
         env = gym.make(suboptions.env_name)
 
-        agent_types = {"human": HumanAgent(), "base": BaseAgent(env.actions),
-                       "smart": SmartAgent(actions=env.actions, exploratory_rate=suboptions.exploratory_rate,
-                                           learning_rate=suboptions.learning_rate)}
-
-        agent = agent_types[suboptions.agent]
+        agent = SmartAgent(actions=env.actions, exploratory_rate=suboptions.exploratory_rate, learning_rate=suboptions.learning_rate)
 
         policy_filename = os.path.join("policies", f"{suboptions.env_name}.json")
         if suboptions.with_policy:
@@ -192,8 +186,6 @@ def main():
                                help="The number of episodes to play against each other.", type=int, default=100)
         subparser.add_argument("-na", "--num-agents",
                                help="The number of agents to pit against themselves.", type=int, default=0)
-        subparser.add_argument("-a", "--agent", choices=["human", "base", "smart"], help="Human, Base, or Smart",
-                               default="smart")
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                type=float,
                                default=0.5)
@@ -205,7 +197,7 @@ def main():
             "-env",
             "--env-name",
             dest="env_name",
-            help="gym environment to load",
+            help="rlgym environment to load",
             default='MiniGrid-Empty-5x5-v0'
         )
         logger: Logger = Logger(parser=subparser)
