@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-from collections import defaultdict
 from typing import Dict, Tuple, Union
 
 from rl.agents.learning import LearningAgent
@@ -18,19 +17,7 @@ class SampleAveragingAgent(LearningAgent):
         Represents an agent learning with temporal difference
         :param state_values: A mapping of states to and their associated values
         """
-        super().__init__(transitions=transitions)
-        if not state_values:
-            self._state_values = defaultdict(Value)
-        else:
-            self._state_values = state_values
-
-    @property
-    def state_values(self) -> Dict[Tuple[Union[int, float]], Value]:
-        return self._state_values
-
-    @state_values.setter
-    def state_values(self, state_values: Dict[Tuple[Union[int, float]], Value]):
-        self._state_values = state_values
+        super().__init__(state_values=state_values, transitions=transitions)
 
     def learn_value(self):
         """

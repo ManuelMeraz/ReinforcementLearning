@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
 from collections import defaultdict, Counter
-from typing import Dict, Tuple, Union
 
 from rl.agents.agent import Agent
 from rl.reprs import Transition
@@ -13,23 +12,18 @@ class LearningAgent(Agent):
     The learning agent implements a learning method and is used for purposes of building a state value map
     """
 
-    def __init__(self, transitions=None):
+    def __init__(self, state_values=None, transitions=None):
         self.trajectory = []
 
-        if not transitions:
+        if state_values is None:
+            self.state_values = defaultdict(Value)
+        else:
+            self.state_values = state_values
+
+        if transitions is None:
             self.transitions = defaultdict(Counter)
         else:
             self.transitions = transitions
-
-    @property
-    @abstractmethod
-    def state_values(self) -> Dict[Tuple[Union[int, float]], Value]:
-        pass
-
-    @state_values.setter
-    @abstractmethod
-    def state_values(self, state_values: Dict[Tuple[Union[int, float]], Value]):
-        pass
 
     @abstractmethod
     def learn_value(self):

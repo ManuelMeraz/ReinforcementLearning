@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-from collections import defaultdict
 from typing import Dict, Tuple, Union
 
 from rl.agents.learning import LearningAgent
@@ -20,19 +19,7 @@ class TemporalDifferenceAveragingAgent(LearningAgent):
         :param learning_rate: How much to learn from the most recent action
         :param state_values: A mapping of states to and their associated values
         """
-        super().__init__(transitions=transitions)
-        if not state_values:
-            self._state_values = defaultdict(Value)
-        else:
-            self._state_values = state_values
-
-    @property
-    def state_values(self) -> Dict[Tuple[Union[int, float]], Value]:
-        return self._state_values
-
-    @state_values.setter
-    def state_values(self, state_values: Dict[Tuple[Union[int, float]], Value]):
-        self._state_values = state_values
+        super().__init__(state_values=state_values, transitions=transitions)
 
     def learn_value(self):
         """
@@ -46,7 +33,6 @@ class TemporalDifferenceAveragingAgent(LearningAgent):
 
         if current_value.value != 0:
             for i in range(-2, -1 * len(self.trajectory), -1):
-
                 previous_transition = self.trajectory[i - 1]
                 previous_value: Value = self.state_values[previous_transition.state]
 

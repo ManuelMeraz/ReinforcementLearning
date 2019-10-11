@@ -4,10 +4,16 @@ from typing import List
 import numpy
 
 from rl.agents import HumanPolicyAgent
+from rl.agents.learning.null_learning_agent import NullLearningAgent
 from rl.envs.tictactoe import Mark
 
 
-class HumanAgent(HumanPolicyAgent):
+class HumanAgent(HumanPolicyAgent, NullLearningAgent):
+
+    def __init__(self):
+        HumanPolicyAgent.__init__(self)
+        NullLearningAgent.__init__(self)
+
     def available_actions(self, state: numpy.ndarray) -> numpy.ndarray:
         """
         Determines the available actions for the agent given the state
