@@ -6,7 +6,8 @@ import numpy
 from rl.agents.policy import PolicyAgent
 
 
-class EGreedyPolicyAgent(PolicyAgent):
+class DecayingEGreedyPolicyAgent(PolicyAgent):
+
     def __init__(self, exploratory_rate: float):
         """
         This agent implements a method that picks an action using an egreedy policy

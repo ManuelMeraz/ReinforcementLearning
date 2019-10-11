@@ -3,17 +3,16 @@
 from __future__ import division, print_function
 
 import argparse
-import math
 import signal
 import sys
+from collections import defaultdict, Counter
 
 import gym
 import matplotlib.pyplot as plt
 import numpy
-from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 
-from rl.bandits import SmartAgent
-from rl.reprs import Transition
+from rl.bandits import EGreedySampleAveraging, EGreedyWeightedAveraging
+from rl.reprs import Transition, Value
 from rl.utils.logging import Logger
 
 
@@ -33,8 +32,9 @@ def play(agent, env_name, num_episodes=1000):
         agent.learn(transition)
         # print(f"action: {action} reward: {reward} episodes: {ep + 1}")
 
-    agent = SmartAgent(agent.action_space, agent.exploratory_rate)
-    env.reset()
+    agent.reset()
+    agent.state_values = defaultdict(Value)
+    agent.transitions = defaultdict(Counter)
     return rewards
 
 
@@ -46,12 +46,25 @@ def main():
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "--num-episodes", help="The number of times to sample from bandits",
+    parser.add_argument("-ne", "--num-episodes", help="The number of bandit simulations to run",
                         type=int,
-                        default=3000)
+                        default=2000)
+    parser.add_argument("-ni", "--num-iterations", help="The number of iterations per bandit simulation",
+                        type=int,
+                        default=1000)
+    parser.add_argument("-a", "--agent", help="The type of agent to use", choices=["EGSA", "EGWA", "DEGSA", "DEGWA"],
+                        type=str,
+                        default="EGSA")
+    parser.add_argument("-l", "--learning-rate", help="The learning rate for weighted averaging learning.",
+                        type=float,
+                        default=0.1)
     parser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                         type=float,
                         default=0.1)
+
+    parser.add_argument("-o", "--out-image", help="The name of the plot to be output.",
+                        type=str,
+                        default="ArmedBandits")
     parser.add_argument(
         "-env",
         "--env-name",
@@ -63,39 +76,47 @@ def main():
     logger: Logger = Logger(parser=parser)
     options = parser.parse_args()
 
+    agent_types = {
+        "EGSA": EGreedySampleAveraging,
+        "EGWA": EGreedyWeightedAveraging
+    }
     env = gym.make(options.env_name)
-    agents = [SmartAgent(action_space=env.action_space, exploratory_rate=0.0),
-              SmartAgent(action_space=env.action_space, exploratory_rate=0.01),
-              SmartAgent(action_space=env.action_space, exploratory_rate=0.10)]
+    constructor_kwargs = {
+        "action_space": env.action_space,
+    }
+
+    if options.agent == "EGWA" or options.agent == "DEGWA":
+        constructor_kwargs["learning_rate"] = options.learning_rate
+
+    exploratory_rates = [0.0, 0.01, 0.1]
+
+    agents = []
+    for e in exploratory_rates:
+        constructor_kwargs["exploratory_rate"] = e
+        agents.append(agent_types[options.agent](**constructor_kwargs))
 
     fig, ax = plt.subplots(figsize=(10, 8))
 
-    num_iterations = 2000
     for agent in agents:
-        rewards = numpy.zeros(num_iterations)
+        rewards = numpy.zeros(options.num_iterations)
         for run in range(options.num_episodes):
-            new_rewards = play(agent, options.env_name, num_episodes=num_iterations)
-            for i in range(num_iterations):
+            new_rewards = play(agent, options.env_name, num_episodes=options.num_iterations)
+            for i in range(options.num_iterations):
                 rewards[i] += (1 / (run + 1)) * (new_rewards[i] - rewards[i])
 
-        iterations = numpy.arange(num_iterations)
+        iterations = numpy.arange(options.num_iterations)
         ax.plot(iterations, rewards, label=str(agent.exploratory_rate))
 
     ax.set(xlabel='iterations', ylabel='rewards',
            title='iterations vs rewards')
 
-    ax.set_xlim(0, num_iterations)
+    ax.set_xlim(0, options.num_iterations)
     ax.set_ylim(-0.2, 1.5)
 
-    ax.xaxis.set_major_locator(MultipleLocator(math.floor(0.2 * num_iterations)))
-    ax.yaxis.set_major_locator(MultipleLocator(0.1))
-
-    ax.xaxis.set_minor_locator(AutoMinorLocator(math.floor(0.04 * num_iterations)))
-    ax.yaxis.set_minor_locator(AutoMinorLocator(0.02))
-    ax.grid()
     ax.legend()
-    plt.savefig('10armedtestbed.png', dpi=100)
+    plt.savefig(options.out_image, dpi=100)
     print("done!")
+
 
 if __name__ == "__main__":
     main()

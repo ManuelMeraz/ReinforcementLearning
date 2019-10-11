@@ -121,7 +121,7 @@ def play(agent, env, episodes=100):
             # # If the window was closed
             if renderer.window is None:
                 break
-            # time.sleep(0.5)
+            time.sleep(0.01)
 
             if done:
                 agent.reset()
@@ -138,7 +138,7 @@ def main():
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     parser = argparse.ArgumentParser();
-    parser.add_argument("command", help="Play a game of TicTacToe or Train the SmartAgent agent.")
+    parser.add_argument("command", help="Play a game of TicTacToe or Train the EGreedySampleAveraging agent.")
     if len(sys.argv) <= 1:
         parser.print_help()
         sys.exit(1)

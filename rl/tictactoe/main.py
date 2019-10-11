@@ -12,7 +12,7 @@ import gym
 import numpy
 from tqdm import tqdm
 
-from rl.envs.tictactoe import TicTacToeEnv, Status, Mark
+from rl.envs.tictactoe import Status, Mark
 from rl.reprs import Transition
 from rl.tictactoe import HumanAgent, BaseAgent, SmartAgent
 from rl.utils.io import load_learning_agent, save_learning_agent
@@ -166,7 +166,7 @@ def main():
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     parser = argparse.ArgumentParser();
-    parser.add_argument("command", help="Play a game of TicTacToe or Train the SmartAgent agent.")
+    parser.add_argument("command", help="Play a game of TicTacToe or Train the EGreedySampleAveraging agent.")
 
     if len(sys.argv) <= 1:
         parser.print_help()

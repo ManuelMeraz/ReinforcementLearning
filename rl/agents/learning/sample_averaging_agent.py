@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Dict, Tuple, Union
 
 from rl.agents.learning import LearningAgent
-from rl.reprs import Value
+from rl.reprs import Value, Transition
 
 
 class SampleAveragingAgent(LearningAgent):
@@ -37,7 +37,7 @@ class SampleAveragingAgent(LearningAgent):
         Apply temporal difference learning and update the state and values of this agent
         """
 
-        current_transition = self.trajectory[-1]
+        current_transition: Transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
         current_value.value += (1 / current_value.count) * (current_transition.reward - current_value.value)
