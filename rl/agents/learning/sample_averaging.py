@@ -40,6 +40,5 @@ class SampleAveragingAgent(LearningAgent):
         current_transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
-        current_value.value += current_value.value + 1 / current_value.count * (
-                    current_transition.reward - current_value.value)
+        current_value.value += (1 / current_value.count) * (current_transition.reward - current_value.value)
         self.state_values[current_transition.state] = current_value

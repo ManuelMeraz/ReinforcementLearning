@@ -3,4 +3,9 @@ gym-minigrid
 numpy
 pytest
 tqdm
+matplotlib
+
 git+https://github.com/JKCooper2/gym-bandits#egg=gym-bandits
+
+# swig
+# freetype
