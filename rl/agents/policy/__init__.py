@@ -1,1 +1,6 @@
+from .decaying_egreedy_policy_agent import DecayingEGreedyPolicyAgent
+from .egreedy_policy_agent import EGreedyPolicyAgent
+from .human_policy_agent import HumanPolicyAgent
+from .null_policy_agent import NullPolicyAgent
 from .policy_agent import PolicyAgent
+from .random_policy_agent import RandomPolicyAgent

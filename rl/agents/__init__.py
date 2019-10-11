@@ -1,6 +1,14 @@
 # learning agents
-from .learning.temporal_difference_agent import TemporalDifferenceAgent
+from .learning import LearningAgent
+from .learning import NullLearningAgent
+from .learning import SampleAveragingAgent
+from .learning import TemporalDifferenceAgent
+from .learning import TemporalDifferenceAgent
+from .learning import TemporalDifferenceAveragingAgent
+from .learning import WeightedAveragingAgent
+from .policy import DecayingEGreedyPolicyAgent
 # policy agents
-from .policy.egreedy_policy_agent import EGreedyPolicyAgent
-from .policy.human_policy_agent import HumanPolicyAgent
-from .policy.random_policy_agent import RandomPolicyAgent
+from .policy import EGreedyPolicyAgent
+from .policy import HumanPolicyAgent
+from .policy import NullPolicyAgent
+from .policy import RandomPolicyAgent
