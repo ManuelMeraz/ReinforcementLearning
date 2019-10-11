@@ -1,9 +1,6 @@
 gym
 gym-minigrid
 numpy
-pandas
 pytest
 tqdm
-box2d 
-box2d-kengz
-gym[atari]
+git+https://github.com/JKCooper2/gym-bandits#egg=gym-bandits
