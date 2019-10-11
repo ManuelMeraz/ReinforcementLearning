@@ -8,6 +8,7 @@ import sys
 import time
 from typing import Dict, Union
 
+import gym
 import numpy
 from tqdm import tqdm
 
@@ -25,7 +26,7 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
     :param player_x: Player X
     :param player_o:  Player O
     """
-    env = TicTacToeEnv()
+    env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
 
     if not isinstance(player_x, HumanAgent) and not isinstance(player_o, HumanAgent):
@@ -79,7 +80,7 @@ def learn_from_game(args):
     index = args[2]
     num_cpus = args[3]
 
-    env = TicTacToeEnv()
+    env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
 
     players: Dict[Mark, SmartAgent] = {
