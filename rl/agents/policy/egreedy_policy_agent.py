@@ -1,47 +1,27 @@
 #! /usr/bin/env python3
-from abc import abstractmethod
 
 import numpy
 
-from rl.agents.policy import PolicyAgent
+from .policy_agent import PolicyAgent
 
 
-class EGreedyPolicyAgent(PolicyAgent):
-    def __init__(self, exploratory_rate: float):
+class EGreedy(PolicyAgent):
+    def __init__(self, exploratory_rate: float, *args, **kwargs):
         """
         This agent implements a method that picks an action using an egreedy policy
         :param exploratory_rate: The probably of selecting an action at random from a uniform distribution
         """
+        super().__init__(*args, **kwargs)
         self.exploratory_rate = exploratory_rate
 
-    @abstractmethod
-    def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False) -> numpy.ndarray:
-        """
-        State transition model that describes how the environment state changes when the
-        agent performs an action depending on the action and the current state.
-        :param state: The state of the environment
-        :param action: An action available to the agent
-        :param copy: When applying the action to the state, do so with a copy or apply it directly
-        """
-        pass
-
-    @abstractmethod
-    def value_model(self, state: numpy.ndarray, action: int) -> float:
-        """
-        Map an action to it's value
-        :param state: The state of the environment
-        :param action: An integer representing an action available to the agent
-        :return: The reward received for taking that action
-        """
-        pass
-
-    def act(self, state: numpy.ndarray) -> int:
+    def act(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
         """
         Apply this agents policy and select an action
         :param state:  The state of the environment
+        :param available_actions: A list of available possible actions (positions on the board to mark)
         :return: an action
         """
-        return self.egreedy_policy(state, self.available_actions(state))
+        return self.egreedy_policy(state, available_actions)
 
     def egreedy_policy(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
         """

@@ -3,16 +3,16 @@ from typing import Dict, Tuple, Union
 
 import numpy
 
-from rl.agents import EGreedyPolicyAgent
-from rl.agents.learning import WeightedAveragingAgent
+from rl.agents import EGreedy
+from rl.agents.learning import WeightedAveraging
 from rl.reprs import Value
 
 
-class EGreedyWeightedAveraging(EGreedyPolicyAgent, WeightedAveragingAgent):
+class EGreedyWeightedAveraging(EGreedy, WeightedAveraging):
     def __init__(self, action_space, exploratory_rate: float, learning_rate: float,
                  state_values: Dict[Tuple[Union[int, float]], Value] = None, transitions=None):
-        EGreedyPolicyAgent.__init__(self, exploratory_rate=exploratory_rate)
-        WeightedAveragingAgent.__init__(self, learning_rate, state_values=state_values, transitions=transitions)
+        EGreedy.__init__(self, exploratory_rate=exploratory_rate)
+        WeightedAveraging.__init__(self, learning_rate, state_values=state_values, transitions=transitions)
 
         self.action_space = action_space
         self.actions = numpy.array([action for action in range(action_space.n)])

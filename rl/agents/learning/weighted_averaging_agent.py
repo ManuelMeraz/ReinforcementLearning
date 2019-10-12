@@ -5,7 +5,10 @@ from rl.agents.learning import LearningAgent
 from rl.reprs import Value
 
 
-class WeightedAveragingAgent(LearningAgent):
+class WeightedAveraging(LearningAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     """
     Applies the temporal difference algorithm as a learning algorithm
     V(s) = V(s) + alpha * (reward + V(s') - V(s))

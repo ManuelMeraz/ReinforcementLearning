@@ -1,23 +1,22 @@
 #! /usr/bin/env python3
-from typing import Dict, Tuple, Union
 
 from rl.agents.learning import LearningAgent
 from rl.reprs import Value, Transition
 
 
-class SampleAveragingAgent(LearningAgent):
+class SampleAveraging(LearningAgent):
     """
     Applies the temporal difference algorithm as a learning algorithm
     V(s) = V(s) + alpha * (reward + V(s') - V(s))
     Where alpha is the learning rate at 1 / (N + 1)
     """
 
-    def __init__(self, state_values: Dict[Tuple[Union[int, float]], Value] = None, transitions=None):
+    def __init__(self, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
         :param state_values: A mapping of states to and their associated values
         """
-        super().__init__(state_values=state_values, transitions=transitions)
+        super().__init__(*args, **kwargs)
 
     def learn_value(self):
         """

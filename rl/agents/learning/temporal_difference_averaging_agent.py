@@ -5,7 +5,9 @@ from rl.agents.learning import LearningAgent
 from rl.reprs import Value
 
 
-class TemporalDifferenceAveragingAgent(LearningAgent):
+class TemporalDifferenceAveraging(LearningAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
     """
     Applies the temporal difference algorithm as a learning algorithm
     V(s) = V(s) + alpha * (reward + V(s') - V(s))

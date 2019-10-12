@@ -15,7 +15,6 @@ import numpy
 from tqdm import tqdm
 
 from rl.reprs import Transition
-from rl.rlgrid import SmartAgent
 from rl.utils.io import save_learning_agent, load_learning_agent
 from rl.utils.logging import Logger
 
@@ -63,7 +62,7 @@ def learn_from_game(args):
     return agent
 
 
-def learn(main_agent: SmartAgent, env_name: str, num_episodes: int, num_agents: int, policy_filename: str):
+def learn(main_agent: Agent, env_name: str, num_episodes: int, num_agents: int, policy_filename: str):
     """
     Pit agents against themselves tournament style. The winners survive.
     :param main_agent: The agent that will learn from playing games
@@ -84,9 +83,9 @@ def learn(main_agent: SmartAgent, env_name: str, num_episodes: int, num_agents: 
     chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
         agents = [
-            (SmartAgent(actions=main_agent.actions, exploratory_rate=main_agent.exploratory_rate,
-                        learning_rate=main_agent.learning_rate, state_values=main_agent.state_values,
-                        transitions=main_agent.transitions),
+            (Smart(actions=main_agent.actions, exploratory_rate=main_agent.exploratory_rate,
+                   learning_rate=main_agent.learning_rate, state_values=main_agent.state_values,
+                   transitions=main_agent.transitions),
              num_episodes, i, processes, env_name) for i in range(num_agents)]
 
         print("Playing games...")
@@ -168,12 +167,13 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
         env = gym.make(suboptions.env_name)
 
-        agent = SmartAgent(actions=env.actions, exploratory_rate=suboptions.exploratory_rate, learning_rate=suboptions.learning_rate)
+        agent = Smart(actions=env.actions, exploratory_rate=suboptions.exploratory_rate,
+                      learning_rate=suboptions.learning_rate)
 
         policy_filename = os.path.join("policies", f"{suboptions.env_name}.json")
         if suboptions.with_policy:
             agent.state_values, agent.transitions = load_learning_agent(suboptions.with_policy)
-        elif isinstance(agent, SmartAgent) and os.path.exists(policy_filename):
+        elif isinstance(agent, Smart) and os.path.exists(policy_filename):
             print(f"Using policy: {policy_filename}")
             agent.state_values, agent.transitions = load_learning_agent(policy_filename)
 
@@ -218,9 +218,9 @@ def main():
         else:
             state_values, transitions = None, None
 
-        agent = SmartAgent(actions=env.actions, exploratory_rate=suboptions.exploratory_rate,
-                           learning_rate=suboptions.learning_rate,
-                           state_values=state_values, transitions=transitions)
+        agent = Smart(actions=env.actions, exploratory_rate=suboptions.exploratory_rate,
+                      learning_rate=suboptions.learning_rate,
+                      state_values=state_values, transitions=transitions)
 
         learn(agent, suboptions.env_name, num_episodes=suboptions.num_episodes, num_agents=suboptions.num_agents,
               policy_filename=policy_filename)

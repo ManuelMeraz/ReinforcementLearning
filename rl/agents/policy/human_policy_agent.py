@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 import sys
-from abc import abstractmethod
 
 import numpy
 
 from rl.agents.policy.policy_agent import PolicyAgent
 
 
-class HumanPolicyAgent(PolicyAgent):
-    def act(self, state: numpy.ndarray) -> int:
+class Human(PolicyAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def act(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
         """
         Requests user input to for agent action
         :param state:  A tuple containing the state of environment
+        :param available_actions: A list of available possible actions (positions on the board to mark)
         :return: The action selected
         """
-        available_actions: numpy.ndarray = self.available_actions(state)
-
         while True:
-            user_input: str = input(self.render_actions(available_actions))
+            user_input: str = input(f"available actions: {available_actions}")
 
             if user_input.startswith("q") or "quit" in user_input:
                 print("quitting!")
@@ -35,11 +36,3 @@ class HumanPolicyAgent(PolicyAgent):
                 print(f"Illegal action: '{user_input}'")
 
         return action
-
-    @abstractmethod
-    def render_actions(self, actions: numpy.ndarray) -> str:
-        """
-         Create human readable string to query user for input
-        :param actions: An array of action
-        """
-        pass

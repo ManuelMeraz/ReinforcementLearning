@@ -3,16 +3,16 @@ from typing import Dict, Tuple, Union
 
 import numpy
 
-from rl.agents import EGreedyPolicyAgent
-from rl.agents.learning.sample_averaging_agent import SampleAveragingAgent
+from rl.agents import EGreedy
+from rl.agents.learning.sample_averaging_agent import SampleAveraging
 from rl.reprs import Value
 
 
-class EGreedySampleAveraging(EGreedyPolicyAgent, SampleAveragingAgent):
+class EGreedySampleAveraging(EGreedy, SampleAveraging):
     def __init__(self, action_space, exploratory_rate: float,
                  state_values: Dict[Tuple[Union[int, float]], Value] = None, transitions=None):
-        EGreedyPolicyAgent.__init__(self, exploratory_rate=exploratory_rate)
-        SampleAveragingAgent.__init__(self, state_values=state_values, transitions=transitions)
+        EGreedy.__init__(self, exploratory_rate=exploratory_rate)
+        SampleAveraging.__init__(self, state_values=state_values, transitions=transitions)
 
         self.action_space = action_space
         self.actions = numpy.array([action for action in range(action_space.n)])

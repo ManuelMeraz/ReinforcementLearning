@@ -6,21 +6,24 @@ import os
 import signal
 import sys
 import time
-from typing import Dict, Union
+from typing import Dict
 
 import gym
 import numpy
 from tqdm import tqdm
 
+from rl.agents import AgentBuilder, Agent
 from rl.envs.tictactoe import Status, Mark
 from rl.reprs import Transition
-from rl.tictactoe import HumanAgent, BaseAgent, SmartAgent
 from rl.utils.io import load_learning_agent, save_learning_agent
 from rl.utils.logging import Logger
 
 
-def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
-         player_o: Union[HumanAgent, BaseAgent, SmartAgent]):
+def available_actions(state: numpy.ndarray) -> numpy.ndarray:
+    return numpy.where(state == Mark.EMPTY)[0]
+
+
+def play(player_x: Agent, player_o: Agent):
     """
     Play game of TicTactoe
     :param player_x: Player X
@@ -29,12 +32,7 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
     env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
 
-    if not isinstance(player_x, HumanAgent) and not isinstance(player_o, HumanAgent):
-        not_human = True
-    else:
-        not_human = False
-
-    players: Dict[Mark, Union[HumanAgent, BaseAgent, SmartAgent]] = {
+    players: Dict[Mark, Agent] = {
         Mark.X: player_x,
         Mark.O: player_o,
     }
@@ -42,8 +40,8 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
     env.render(mode="human")
 
     while True:
-        current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
-        action: int = current_player.act(obs)
+        current_player: Agent = players[env.next_player()]
+        action: int = current_player.act(obs, available_actions=available_actions(obs))
 
         obs: numpy.ndarray
         reward: float
@@ -51,13 +49,11 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
         info: Dict[str, Status]
 
         obs, reward, done, info = env.step(action)
-
-        if isinstance(current_player, SmartAgent):
-            current_player.learn(Transition(state=obs, action=action, reward=reward))
+        current_player.learn(Transition(state=obs, action=action, reward=reward))
 
         env.render(mode="human")
-        if not_human:
-            input("Press enter to continue...")
+        # if not_human:
+        #     input("Press enter to continue...")
 
         if done:
             status: Status = info["status"]
@@ -75,23 +71,26 @@ def play(player_x: Union[HumanAgent, BaseAgent, SmartAgent],
 
 
 def learn_from_game(args):
-    td_agent = args[0]
+    builder = args[0]
     num_games = args[1]
     index = args[2]
     num_cpus = args[3]
 
+    td_agent = builder.make()
     env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
 
-    players: Dict[Mark, SmartAgent] = {
-        Mark.X: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
-        Mark.O: SmartAgent(td_agent.learning_rate, td_agent.exploratory_rate, td_agent.state_values),
+    builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
+
+    players: Dict[Mark, Agent] = {
+        Mark.X: builder.make(),
+        Mark.O: builder.make(),
     }
 
     for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
         while True:
-            current_player: Union[HumanAgent, BaseAgent, SmartAgent] = players[env.next_player()]
-            action: int = current_player.act(obs)
+            current_player: Agent = players[env.next_player()]
+            action: int = current_player.act(obs, available_actions(obs))
 
             obs: numpy.ndarray
             reward: float
@@ -118,10 +117,10 @@ def learn_from_game(args):
     return td_agent
 
 
-def learn(main_agent: SmartAgent, num_games: int, num_agents: int, policy_filename: str = None):
+def learn(builder: AgentBuilder, num_games: int, num_agents: int, policy_filename: str = None):
     """
     Pit agents against themselves tournament style. The winners survive.
-    :param main_agent: The agent that will learn from playing games
+    :param builder: A preset builder with settings necessary for smart agent
     :param num_games:  The number of games to play each other
     :param num_agents:  The number of games to play each other
     :param policy_filename: The filename to save the learned policy to
@@ -136,11 +135,10 @@ def learn(main_agent: SmartAgent, num_games: int, num_agents: int, policy_filena
     if num_agents < processes:
         processes = num_agents
 
+    main_agent = builder.make()
     chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
-        agents = [
-            (SmartAgent(main_agent.learning_rate, main_agent.exploratory_rate, main_agent.state_values),
-             num_games, i, processes) for i in range(num_agents)]
+        agents = [(builder, num_games, i, processes) for i in range(num_agents)]
 
         print("Playing games...")
         agents = pool.map(learn_from_game, iterable=agents, chunksize=chunksize)
@@ -165,7 +163,7 @@ def keyboard_interrupt_handler(signal, frame):
 def main():
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
-    parser = argparse.ArgumentParser();
+    parser = argparse.ArgumentParser()
     parser.add_argument("command", help="Play a game of TicTacToe or Train the EGreedySampleAveraging agent.")
 
     if len(sys.argv) <= 1:
@@ -186,19 +184,24 @@ def main():
 
         suboptions = subparser.parse_args(sys.argv[2:])
 
-        agent_types = {"human": HumanAgent(), "base": BaseAgent(),
-                       "smart": SmartAgent(learning_rate=0.5, exploratory_rate=0.1)}
+        agent_types = {"human": AgentBuilder(policy="Human"), "base": AgentBuilder(policy="Random"),
+                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifference")}
 
-        player_x = agent_types[suboptions.X]
-        player_o = agent_types[suboptions.O]
+        players = [suboptions.X, suboptions.O]
 
-        if isinstance(player_o, SmartAgent) and suboptions.with_policy:
-            player_o.state_values, player_o.transitions = load_learning_agent(suboptions.with_policy)
+        for player in players:
+            if player == "smart":
+                if suboptions.with_policy:
+                    state_values, transitions = load_learning_agent(suboptions.with_policy)
+                else:
+                    state_values, transitions = None, None
 
-        if isinstance(player_x, SmartAgent) and suboptions.with_policy:
-            player_x.state_values, player_x.transitions = load_learning_agent(suboptions.with_policy)
+                agent_types[player].set(exploratory_rate=0.1,
+                                        learning_rate=0.5,
+                                        state_values=state_values,
+                                        transitions=transitions)
 
-        play(player_x=player_x, player_o=player_o)
+        play(player_x=agent_types[players[0]].make(), player_o=agent_types[players[1]].make())
 
     elif options.command == "learn":
         subparser = subparsers.add_parser("learn",
@@ -223,12 +226,15 @@ def main():
         if suboptions.with_policy:
             state_values, transitions = load_learning_agent(suboptions.with_policy)
         else:
-            policy = None
-        agent = SmartAgent(learning_rate=suboptions.learning_rate, exploratory_rate=suboptions.exploratory_rate,
-                           state_values=state_values, transitions=transitions)
+            state_values, transitions = None, None
 
-        learn(agent, num_games=suboptions.num_games,
-              num_agents=suboptions.num_agents, policy_filename=suboptions.with_policy)
+        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
+        builder.set(learning_rate=suboptions.learning_rate,
+                    exploratory_rate=suboptions.exploratory_rate,
+                    state_values=state_values,
+                    transitions=transitions)
+        learn(builder, num_games=suboptions.num_games, num_agents=suboptions.num_agents,
+              policy_filename=suboptions.with_policy)
         print("No other options.")
 
 
