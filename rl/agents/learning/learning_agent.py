@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
 from collections import defaultdict, Counter
+from typing import Tuple
 
 import numpy
 
@@ -79,38 +80,24 @@ class LearningAgent(Agent):
         for state_action, counts in agent.transitions.items():
             self.transitions[state_action] += counts
 
-    def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False) -> numpy.ndarray:
+    def transition_model(self, state: numpy.ndarray, action: int) -> Tuple[numpy.ndarray, numpy.ndarray]:
         """
         State transition model that describes how the environment state changes when the
         agent performs an action depending on the action and the current state.
         :param state: The state of the environment
         :param action: An action available to the agent
-        :param copy: When applying the action to the state, do so with a copy or apply it directly
         """
-        if copy:
-            next_state = state.copy()
-        else:
-            next_state = state
-
-        state_counts = self.transitions[(*next_state, action)]
+        state_action_pair = (*state, action)
+        state_counts = self.transitions[state_action_pair]
 
         if not state_counts:
-            return state
+            return numpy.array([]), numpy.array([])
 
-        states = list(state_counts.keys())
+        states = numpy.array(list(state_counts.keys()))
         counts = numpy.array(list(state_counts.values()))
 
-        counts = numpy.maximum(counts, 0)
-        sum = counts.sum()
-        probabilities = counts / sum
-
-        # values = []
-        # for p, s in zip(probabilities, states):
-        #     values.append(self.state_values[s].value)
-
-        index = numpy.random.choice(numpy.arange(len(state_counts)), p=probabilities)
-        # return states[numpy.argmax(numpy.array(values))]
-        return states[index]
+        probabilities = counts / counts.sum()
+        return probabilities, states
 
     def value_model(self, state: numpy.ndarray, action: int) -> float:
         """

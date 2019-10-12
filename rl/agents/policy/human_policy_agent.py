@@ -18,7 +18,7 @@ class Human(PolicyAgent):
         :return: The action selected
         """
         while True:
-            user_input: str = input(f"available actions: {available_actions}")
+            user_input: str = input(f"available actions: {[action + 1 for action in available_actions]}")
 
             if user_input.startswith("q") or "quit" in user_input:
                 print("quitting!")

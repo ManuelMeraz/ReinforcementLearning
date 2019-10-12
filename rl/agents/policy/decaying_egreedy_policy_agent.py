@@ -51,7 +51,12 @@ class DecayingEGreedy(PolicyAgent):
         max_index: int = 0
 
         for index, action in enumerate(available_actions):
-            next_state: numpy.ndarray = self.transition_model(state, action, copy=True)
+            probabilities: numpy.ndarray
+            states: numpy.ndarray
+            probabilities, states = self.transition_model(state.copy(), action)
+            index = numpy.random.choice(numpy.arange(len(states), p=probabilities))
+
+            next_state: numpy.ndarray = states[index]
             next_value: float = self.value_model(next_state, action)
 
             if next_value > max_value:

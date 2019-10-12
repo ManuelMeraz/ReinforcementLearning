@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+
 from rl import agents
 
 
@@ -35,18 +36,24 @@ class AgentBuilder:
     def set(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
-
-    def make(self) -> agents.Agent:
         policy_name = self.registry[self.policy_agent].__name__
         learning_name = self.registry[self.learning_agent].__name__
+
         exec(f"""
+global {policy_name}{learning_name} 
 class {policy_name}{learning_name}(agents.{policy_name} ,agents.{learning_name}):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    """)
+
+    def make(self) -> agents.Agent:
+        policy_name = self.registry[self.policy_agent].__name__
+        learning_name = self.registry[self.learning_agent].__name__
+
+        exec(f"""
 global agent
-agent = {policy_name}{learning_name}(*self.args, **self.kwargs)
-""")
+agent = {policy_name}{learning_name}(*self.args, **self.kwargs) """)
 
         return agent
 
@@ -55,4 +62,3 @@ if __name__ == "__main__":
     builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
     builder.set(exploratory_rate=0.1, learning_rate=0.5)
     agent = builder.make()
-    print()

@@ -80,8 +80,6 @@ def learn_from_game(args):
     env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
 
-    builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
-
     players: Dict[Mark, Agent] = {
         Mark.X: builder.make(),
         Mark.O: builder.make(),
