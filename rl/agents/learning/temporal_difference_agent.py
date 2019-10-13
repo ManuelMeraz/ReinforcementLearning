@@ -2,7 +2,6 @@
 
 from rl.agents.learning import LearningAgent
 from rl.reprs import Value
-from rl.utils.perf_utils import profiled
 
 
 class TemporalDifference(LearningAgent):
@@ -12,13 +11,14 @@ class TemporalDifference(LearningAgent):
     Where alpha is the learning rate at 1 / (N + 1)
     """
 
-    def __init__(self, learning_rate: float, *args, **kwargs):
+    def __init__(self, learning_rate: float, discount_rate: float, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
         :param learning_rate: How much to learn from the most recent action
         """
         super().__init__(*args, **kwargs)
         self.learning_rate: float = learning_rate
+        self.discount_rate: float = discount_rate
 
     def learn_value(self):
         """
@@ -36,7 +36,7 @@ class TemporalDifference(LearningAgent):
                 previous_value: Value = self.state_values[previous_transition.state]
 
                 previous_value.value += 1 / (previous_value.count + 1) * (
-                        current_value.value - previous_value.value)
+                        self.discount_rate * current_value.value - previous_value.value)
 
                 self.state_values[previous_transition.state] = previous_value
 

@@ -218,6 +218,7 @@ def main():
                     state_values, transitions = None, None
 
                 agent_types[player].set(exploratory_rate=0.0,
+                                        discount_rate=1.0,
                                         state_values=state_values,
                                         transitions=transitions)
 
@@ -237,6 +238,10 @@ def main():
                                help="The amount to scale the learning of the temporal difference algorithm.",
                                type=float,
                                default=0.15)
+        subparser.add_argument("-d", "--discount-rate",
+                               help="How much of the current value to discount from the previous value.",
+                               type=float,
+                               default=1.0)
         subparser.add_argument("-p", "--with-policy", help="A data file containing a policy, generated from learning.",
                                default=None)
         logger: Logger = Logger(parser=subparser)
@@ -250,6 +255,7 @@ def main():
 
         builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceAveraging")
         builder.set(exploratory_rate=suboptions.exploratory_rate,
+                    discount_rate=suboptions.discount_rate,
                     state_values=state_values,
                     transitions=transitions)
         learn(builder, num_games=suboptions.num_games, num_agents=suboptions.num_agents,
