@@ -176,7 +176,7 @@ def learn(builder: AgentBuilder, num_games: int, num_agents: int, policy_filenam
         filename = policy_filename
     else:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = os.getcwd() + "/" + timestamp + ".json"
+        filename = os.getcwd() + "/" + timestamp + ".pickle"
 
     save_learning_agent(main_agent, filename=filename)
 
