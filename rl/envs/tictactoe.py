@@ -67,30 +67,31 @@ class TicTacToeEnv(gym.Env):
 
         # Each location on the board is part of the observation space
         # The last item is the current player's turn
-        self.observation_space = gym.spaces.Discrete(self.board_size + 1)
-        self.start_mark = Mark.O
+        self.observation_space = gym.spaces.Discrete(self.board_size)
+        self.start_mark = Mark.X
         self.status = Status.IN_PROGRESS
         self.info = {"status": self.status}
 
-        self.state: numpy.ndarray = numpy.zeros(self.board_size + 1, dtype=numpy.uint8)
-        self.current_player: Mark = self.start_mark
+        self.state: numpy.ndarray = numpy.zeros(self.board_size, dtype=numpy.uint8)
+        self.player: Mark = self.start_mark
         self.done: bool = False
 
         # set numpy random seed
         self.seed()
 
     def next_player(self) -> Mark:
-        self.current_player = Mark.X if self.current_player == Mark.O else Mark.O
-        self.state[-1] = self.current_player
-        return self.current_player
+        return Mark.X if self.player == Mark.O else Mark.O
+
+    def current_player(self) -> Mark:
+        return Mark.O if self.player == Mark.O else Mark.X
 
     def reset(self) -> numpy.ndarray:
         """
         Reset the environment to it's initial state.
         :return: The initial state of the environment.
         """
-        self.state: numpy.ndarray = numpy.zeros(self.board_size + 1, dtype=numpy.uint8)
-        self.current_player: Mark = self.start_mark
+        self.state: numpy.ndarray = numpy.zeros(self.board_size, dtype=numpy.uint8)
+        self.player: Mark = self.start_mark
         self.done: bool = False
         self.game_ticks: int = 0
         return self.observation
@@ -104,7 +105,9 @@ class TicTacToeEnv(gym.Env):
         assert self.action_space.contains(action), f"Action not available in action space: {action}"
         self.game_ticks += 1
 
-        self.state[action]: Mark = self.current_player
+        self.state[action]: Mark = self.player
+        self.player = self.next_player()
+
         self.status: Status = game_status(self.state)
         self.info["status"]: Status = self.status
 
@@ -127,7 +130,6 @@ class TicTacToeEnv(gym.Env):
         element is the current player's turn.
         :return: The state of the game.
         """
-        self.state[-1] = self.current_player
         return self.state
 
     def render(self, mode=None):
@@ -159,7 +161,7 @@ class TicTacToeEnv(gym.Env):
             "board_size": 9,
             "action_space": self.action_space,
             "observation_space": self.observation_space,
-            "current_player": self.current_player,
+            "current_player": self.player,
             "done": self.done,
             "board_state": self.state,
         })

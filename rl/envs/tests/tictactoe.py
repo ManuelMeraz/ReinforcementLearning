@@ -48,7 +48,7 @@ def test_check_game_status():
 def test_step():
     env = tictactoe.TicTacToeEnv()
     assert env.state == [None] * 9
-    assert env.current_player == "X"
+    assert env.player == "X"
     assert env.done is False
     assert env.board_size == 9
     assert env.info["status"].value == tictactoe.Status.IN_PROGRESS.value
@@ -57,14 +57,14 @@ def test_step():
     board = ["X"] + [None] * 8
     obs, reward, done, info = env.step(action)
     assert env.state == board
-    assert env.current_player == "O"
+    assert env.player == "O"
     assert env.done is False
 
     action = 1
     board[action] = "O"
     obs, reward, done, info = env.step(action)
     assert env.state == board
-    assert env.current_player == "X"
+    assert env.player == "X"
     assert env.done is False
     assert reward == 0
 
@@ -72,7 +72,7 @@ def test_step():
     board[action] = "X"
     obs, reward, done, info = env.step(action)
     assert env.state == board
-    assert env.current_player == "O"
+    assert env.player == "O"
     assert env.done is False
     assert reward == 0
 
@@ -80,7 +80,7 @@ def test_step():
     board[action] = "O"
     obs, reward, done, info = env.step(action)
     assert env.state == board
-    assert env.current_player == "X"
+    assert env.player == "X"
     assert env.done is False
     assert reward == 0
 
@@ -88,13 +88,13 @@ def test_step():
     board[action] = "X"
     obs, reward, done, info = env.step(action)
     assert env.state == board
-    assert env.current_player == "X"
+    assert env.player == "X"
     assert env.done is True
     assert reward == 1
 
     env.reset()
     assert env.state == [None] * 9
-    assert env.current_player == "X"
+    assert env.player == "X"
     assert env.done is False
     assert env.board_size == 9
     assert env.info["status"].value == tictactoe.Status.X_WINS.value

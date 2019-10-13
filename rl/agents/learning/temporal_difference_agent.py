@@ -2,6 +2,7 @@
 
 from rl.agents.learning import LearningAgent
 from rl.reprs import Value
+from rl.utils.perf import profiled
 
 
 class TemporalDifference(LearningAgent):
@@ -23,7 +24,6 @@ class TemporalDifference(LearningAgent):
         """
         Apply temporal difference learning and update the state and values of this agent
         """
-
         current_transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1

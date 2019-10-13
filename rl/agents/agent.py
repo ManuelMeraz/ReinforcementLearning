@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 
 import numpy
 
-from rl.reprs import Transition
-
 
 class Agent(ABC):
     """
@@ -17,7 +15,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def learn(self, transition: Transition):
+    def learn(self, state: numpy.ndarray, action: int, reward: float):
         pass
 
     @abstractmethod
@@ -29,22 +27,20 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def transition_model(self, state: numpy.ndarray, action: int, copy: bool = False) -> numpy.ndarray:
+    def transition_model(self, state: numpy.ndarray, action: int) -> numpy.ndarray:
         """
         State transition model that describes how the environment state changes when the
         agent performs an action depending on the action and the current state.
         :param state: The state of the environment
         :param action: An action available to the agent
-        :param copy: When applying the action to the state, do so with a copy or apply it directly
         """
         pass
 
     @abstractmethod
-    def value_model(self, state: numpy.ndarray, action: int) -> float:
+    def value_model(self, state: numpy.ndarray) -> float:
         """
         Map an action to it's value
         :param state: The state of the environment
-        :param action: An integer representing an action available to the agent
         :return: The reward received for taking that action
         """
         pass

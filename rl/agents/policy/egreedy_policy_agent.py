@@ -55,9 +55,9 @@ class EGreedy(PolicyAgent):
             probabilities, states = self.transition_model(state.copy(), action)
 
             if probabilities.any():
-                index = numpy.random.choice(numpy.arange(len(states), p=probabilities))
-                next_state: numpy.ndarray = states[index]
-                next_value: float = self.value_model(next_state, action)
+                transition_index = numpy.random.choice(numpy.arange(len(states)), p=probabilities)
+                next_state: numpy.ndarray = states[transition_index]
+                next_value: float = self.value_model(next_state)
             else:
                 continue
 

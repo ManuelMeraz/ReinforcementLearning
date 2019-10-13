@@ -14,9 +14,12 @@ from tqdm import tqdm
 
 from rl.agents import AgentBuilder, Agent
 from rl.envs.tictactoe import Status, Mark
-from rl.reprs import Transition
 from rl.utils.io import load_learning_agent, save_learning_agent
 from rl.utils.logging import Logger
+
+
+def next_player(current_player) -> Mark:
+    return Mark.X if current_player == Mark.O else Mark.O
 
 
 def available_actions(state: numpy.ndarray) -> numpy.ndarray:
@@ -37,35 +40,47 @@ def play(player_x: Agent, player_o: Agent):
         Mark.O: player_o,
     }
 
-    env.render(mode="human")
+    observations = {
+        Mark.X: numpy.append(obs, Mark.X),
+        Mark.O: numpy.append(obs, Mark.O)
+    }
 
+    env.render(mode="human")
     while True:
-        current_player: Agent = players[env.next_player()]
-        action: int = current_player.act(obs, available_actions=available_actions(obs))
+        previous_player = env.next_player()
+        current_player = env.current_player()
+        action: int = players[current_player].act(observations[current_player], available_actions(obs))
 
         obs: numpy.ndarray
         reward: float
         done: bool
         info: Dict[str, Status]
-
         obs, reward, done, info = env.step(action)
-        current_player.learn(Transition(state=obs, action=action, reward=reward))
+        players[current_player].learn(state=observations[current_player], action=action, reward=reward)
+        players[previous_player].learn(state=observations[previous_player], action=action, reward=-1 * reward)
+
+        observations[Mark.X] = numpy.append(obs, Mark.X)
+        observations[Mark.O] = numpy.append(obs, Mark.O)
 
         env.render(mode="human")
-        # if not_human:
-        #     input("Press enter to continue...")
 
         if done:
-            status: Status = info["status"]
-
-            if status == Status.DRAW:
-                print("The game was a draw!")
+            if info["status"] == Status.X_WINS:
+                print(f"The winner is X!")
+                players[Mark.X].learn(observations[Mark.X], action, reward)
+                players[Mark.O].learn(observations[Mark.O], action, -1 * reward)
+            elif info["status"] == Status.O_WINS:
+                print(f"The winner is O!")
+                players[Mark.O].learn(observations[Mark.O], action, reward)
+                players[Mark.X].learn(observations[Mark.X], action, -1 * reward)
             else:
-                winner = {Status.O_WINS: "O", Status.X_WINS: "X"}
-                print(f"The winner is {winner[status]}!")
+                print("The game was a draw!")
+                players[Mark.O].learn(observations[Mark.O], action, reward)
+                players[Mark.X].learn(observations[Mark.X], action, reward)
 
-                print("Playing new game.")
-
+            print("Playing new game.")
+            players[Mark.O].reset()
+            players[Mark.X].reset()
             obs = env.reset()
             env.render(mode="human")
 
@@ -85,27 +100,41 @@ def learn_from_game(args):
         Mark.O: builder.make(),
     }
 
+    observations = {
+        Mark.X: numpy.append(obs, Mark.X),
+        Mark.O: numpy.append(obs, Mark.O)
+    }
+
     for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
         while True:
-            current_player: Agent = players[env.next_player()]
-            action: int = current_player.act(obs, available_actions(obs))
+            previous_player = env.next_player()
+            current_player = env.current_player()
+            action: int = players[current_player].act(observations[current_player], available_actions(obs))
 
             obs: numpy.ndarray
             reward: float
             done: bool
             info: Dict[str, Status]
-
             obs, reward, done, info = env.step(action)
+            players[current_player].learn(state=observations[current_player], action=action, reward=reward)
+            players[previous_player].learn(state=observations[previous_player], action=action, reward=-1 * reward)
 
-            transition = Transition(state=obs, action=action, reward=reward)
-            current_player.learn(transition)
+            observations[Mark.X] = numpy.append(obs, Mark.X)
+            observations[Mark.O] = numpy.append(obs, Mark.O)
 
             if done:
                 if info["status"] == Status.X_WINS:
-                    players[Mark.O].learn(transition)
+                    players[Mark.X].learn(observations[Mark.X], action, reward)
+                    players[Mark.O].learn(observations[Mark.O], action, -1 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players[Mark.X].learn(transition)
+                    players[Mark.O].learn(observations[Mark.O], action, reward)
+                    players[Mark.X].learn(observations[Mark.X], action, -1 * reward)
+                else:
+                    players[Mark.O].learn(observations[Mark.O], action, reward)
+                    players[Mark.X].learn(observations[Mark.X], action, reward)
 
+                players[Mark.O].reset()
+                players[Mark.X].reset()
                 obs = env.reset()
                 break
 
@@ -183,7 +212,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
 
         agent_types = {"human": AgentBuilder(policy="Human"), "base": AgentBuilder(policy="Random"),
-                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifference")}
+                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifferenceAveraging")}
 
         players = [suboptions.X, suboptions.O]
 
@@ -194,10 +223,11 @@ def main():
                 else:
                     state_values, transitions = None, None
 
-                agent_types[player].set(exploratory_rate=0.1,
-                                        learning_rate=0.5,
+                agent_types[player].set(exploratory_rate=0.0,
                                         state_values=state_values,
                                         transitions=transitions)
+            else:
+                agent_types[player].set()
 
         play(player_x=agent_types[players[0]].make(), player_o=agent_types[players[1]].make())
 
@@ -210,11 +240,11 @@ def main():
                                help="The number of agents to pit against themselves.", type=int, default=0)
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                type=float,
-                               default=0.1)
+                               default=1.0)
         subparser.add_argument("-l", "--learning-rate",
                                help="The amount to scale the learning of the temporal difference algorithm.",
                                type=float,
-                               default=0.5)
+                               default=0.15)
         subparser.add_argument("-p", "--with-policy", help="A data file containing a policy, generated from learning.",
                                default=None)
         logger: Logger = Logger(parser=subparser)
@@ -226,9 +256,8 @@ def main():
         else:
             state_values, transitions = None, None
 
-        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
-        builder.set(learning_rate=suboptions.learning_rate,
-                    exploratory_rate=suboptions.exploratory_rate,
+        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceAveraging")
+        builder.set(exploratory_rate=suboptions.exploratory_rate,
                     state_values=state_values,
                     transitions=transitions)
         learn(builder, num_games=suboptions.num_games, num_agents=suboptions.num_agents,

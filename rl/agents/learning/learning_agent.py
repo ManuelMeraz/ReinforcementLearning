@@ -35,7 +35,8 @@ class LearningAgent(Agent):
     def reset(self):
         self.trajectory.clear()
 
-    def learn(self, transition: Transition):
+    def learn(self, state: numpy.ndarray, action: int, reward: float):
+        transition = Transition(state, action, reward)
         if not self.trajectory:
             self.state_values[transition.state].count += 1
             self.trajectory.append(transition)
@@ -99,11 +100,10 @@ class LearningAgent(Agent):
         probabilities = counts / counts.sum()
         return probabilities, states
 
-    def value_model(self, state: numpy.ndarray, action: int) -> float:
+    def value_model(self, state: numpy.ndarray) -> float:
         """
         Map an action to it's value
         :param state: The state of the environment
-        :param action: An integer representing an action available to the agent
         :return: The reward received for taking that action
         """
         return self.state_values[tuple(state)].value
