@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-from typing import Callable, Union
+from typing import Callable
 
 import numpy
 
@@ -14,15 +14,12 @@ class TemporalDifferenceOne(LearningAgent):
     Where alpha is the learning rate at 1 / (N + 1)
     """
 
-    def __init__(self, learning_rate: Union[float, Callable[[int], float]], discount_rate: float, *args, **kwargs):
+    def __init__(self, learning_rate: Callable[[int], float], discount_rate: float, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
         :param learning_rate: Either a float or a function that takes in the count (N) of that state and returns 1/N
         """
         super().__init__(*args, **kwargs)
-        if isinstance(learning_rate, float):
-            learning_rate = lambda n: learning_rate
-
         self.learning_rate: Callable[[int], float] = learning_rate
         self.discount_rate: float = discount_rate
 
@@ -41,14 +38,19 @@ class TemporalDifferenceOne(LearningAgent):
         values = numpy.zeros(n, dtype='f4')
 
         for i, transition in enumerate(self.trajectory):
-            for j in range(n):
+            for j in range(0, i):
+                discount_rates[i][j] = self.discount_rate ** (n - 1 - j)
+
+            for j in range(i, n):
                 discount_rates[i][j] = self.discount_rate ** (n - 1 - i)
+
             rewards[i] = transition.reward
             values[i] = self.state_values[transition.state].value
 
         values = discount_rates.dot(rewards) - values
-
         for i, transition in enumerate(self.trajectory):
-            self.state_values[transition.state].value = values[i]
+            value = self.state_values[transition.state]
+            value.value = values[i] / value.count
+            self.state_values[transition.state] = value
 
         self.trajectory.clear()
