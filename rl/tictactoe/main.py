@@ -226,8 +226,6 @@ def main():
                 agent_types[player].set(exploratory_rate=0.0,
                                         state_values=state_values,
                                         transitions=transitions)
-            else:
-                agent_types[player].set()
 
         play(player_x=agent_types[players[0]].make(), player_o=agent_types[players[1]].make())
 
