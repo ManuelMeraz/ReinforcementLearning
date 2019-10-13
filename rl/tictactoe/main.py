@@ -210,7 +210,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
 
         agent_types = {"human": AgentBuilder(policy="Human"), "base": AgentBuilder(policy="Random"),
-                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifference")}
+                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZero")}
 
         players = [suboptions.X, suboptions.O]
 
@@ -222,7 +222,7 @@ def main():
                     state_values, transitions = None, None
 
                 agent_types[player].set(exploratory_rate=0.0,
-                                        discount_rate=1.0,
+                                        discount_rate=0.5,
                                         learning_rate=learning_rate,
                                         state_values=state_values,
                                         transitions=transitions)
@@ -246,7 +246,7 @@ def main():
         subparser.add_argument("-d", "--discount-rate",
                                help="How much of the current value to discount from the previous value.",
                                type=float,
-                               default=1.0)
+                               default=0.5)
         subparser.add_argument("-p", "--with-policy", help="A data file containing a policy, generated from learning.",
                                default=None)
         logger: Logger = Logger(parser=subparser)
@@ -258,7 +258,7 @@ def main():
         else:
             state_values, transitions = None, None
 
-        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
+        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZero")
         builder.set(exploratory_rate=suboptions.exploratory_rate,
                     learning_rate=learning_rate,
                     discount_rate=suboptions.discount_rate,

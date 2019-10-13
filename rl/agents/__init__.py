@@ -4,8 +4,8 @@ from .agent_builder import AgentBuilder
 from .learning import LearningAgent
 from .learning import NullLearning
 from .learning import SampleAveraging
-from .learning import TemporalDifference
-from .learning import TemporalDifference
+from .learning import TemporalDifferenceOne
+from .learning import TemporalDifferenceZero
 from .learning import WeightedAveraging
 # policy agents
 from .policy import DecayingEGreedy
