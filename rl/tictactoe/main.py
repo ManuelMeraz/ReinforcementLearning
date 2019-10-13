@@ -85,8 +85,6 @@ def play(player_x: Agent, player_o: Agent):
 def learn_from_game(args):
     builder = args[0]
     num_games = args[1]
-    index = args[2]
-    num_cpus = args[3]
 
     td_agent = builder.make()
     player_x = builder.make()
@@ -100,7 +98,7 @@ def learn_from_game(args):
         Mark.O: player_o,
     }
 
-    for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
+    for _ in range(num_games):
         player_x.obs = numpy.append(obs, Mark.X)
         player_o.obs = numpy.append(obs, Mark.O)
 
@@ -163,13 +161,10 @@ def learn(builder: AgentBuilder, num_games: int, num_agents: int, policy_filenam
     main_agent = builder.make()
     chunksize = math.floor(num_agents / processes)
     with multiprocessing.Pool(processes=processes) as pool:
-        agents = [(builder, num_games, i, processes) for i in range(num_agents)]
+        agents = ((builder, num_games) for _ in range(num_agents))
 
-        print("Playing games...")
-        agents = pool.map(learn_from_game, iterable=agents, chunksize=chunksize)
-
-        print("Merging knowledge...")
-        for agent in agents:
+        print("Learning...")
+        for agent in tqdm(pool.imap_unordered(learn_from_game, iterable=agents, chunksize=chunksize), total=num_agents):
             main_agent.merge(agent)
 
     if policy_filename:
@@ -266,7 +261,6 @@ def main():
                     transitions=transitions)
         learn(builder, num_games=suboptions.num_games, num_agents=suboptions.num_agents,
               policy_filename=suboptions.with_policy)
-        print("No other options.")
 
 
 if __name__ == "__main__":
