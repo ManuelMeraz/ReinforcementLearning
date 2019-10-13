@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
 
-from rl import agents
 import logging
+
+from rl import agents
 
 
 class AgentBuilder:
@@ -73,7 +74,7 @@ class AgentBuilder:
 
 if __name__ == "__main__":
     builder = AgentBuilder(policy="EGreedy", learning="TemporalDifference")
-    builder.set(exploratory_rate=0.1, learning_rate=0.5)
+    builder.set(exploratory_rate=0.1, learning_rate=0.5, discount_rate=-1.0)
     td_agent = builder.make()
     td_agent2 = builder.make()
     builder.reset()
@@ -88,6 +89,7 @@ if __name__ == "__main__":
     assert random_agent.__class__.__name__ == "RandomNullLearning"
 
     builder.add(agent_type="Random")
-    builder.add(agent_type="TemporalDifferenceAveraging")
+    builder.add(agent_type="TemporalDifference")
+    builder.set(discount_rate=1.0, learning_rate=lambda n: 1 / n)
     agent = builder.make()
-    assert agent.__class__.__name__ == "RandomTemporalDifferenceAveraging"
+    assert agent.__class__.__name__ == "RandomTemporalDifference"

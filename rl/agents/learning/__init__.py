@@ -2,5 +2,4 @@ from .learning_agent import LearningAgent
 from .null_learning_agent import NullLearning
 from .sample_averaging_agent import SampleAveraging
 from .temporal_difference_agent import TemporalDifference
-from .temporal_difference_averaging_agent import TemporalDifferenceAveraging
 from .weighted_averaging_agent import WeightedAveraging

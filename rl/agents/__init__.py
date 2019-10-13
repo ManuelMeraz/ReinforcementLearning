@@ -6,7 +6,6 @@ from .learning import NullLearning
 from .learning import SampleAveraging
 from .learning import TemporalDifference
 from .learning import TemporalDifference
-from .learning import TemporalDifferenceAveraging
 from .learning import WeightedAveraging
 # policy agents
 from .policy import DecayingEGreedy

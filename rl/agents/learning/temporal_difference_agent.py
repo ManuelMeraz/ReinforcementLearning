@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+from typing import Callable, Union
 
 from rl.agents.learning import LearningAgent
 from rl.reprs import Value
@@ -11,13 +12,16 @@ class TemporalDifference(LearningAgent):
     Where alpha is the learning rate at 1 / (N + 1)
     """
 
-    def __init__(self, learning_rate: float, discount_rate: float, *args, **kwargs):
+    def __init__(self, learning_rate: Union[float, Callable[[int], float]], discount_rate: float, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
-        :param learning_rate: How much to learn from the most recent action
+        :param learning_rate: Either a float or a function that takes in the count (N) of that state and returns 1/N
         """
         super().__init__(*args, **kwargs)
-        self.learning_rate: float = learning_rate
+        if isinstance(learning_rate, float):
+            learning_rate = lambda n: learning_rate
+
+        self.learning_rate: Callable[[int], float] = learning_rate
         self.discount_rate: float = discount_rate
 
     def learn_value(self):
@@ -31,11 +35,10 @@ class TemporalDifference(LearningAgent):
 
         if current_value.value != 0:
             for i in range(-2, -1 * len(self.trajectory), -1):
-
                 previous_transition = self.trajectory[i - 1]
                 previous_value: Value = self.state_values[previous_transition.state]
 
-                previous_value.value += 1 / (previous_value.count + 1) * (
+                previous_value.value += self.learning_rate(previous_value.count + 1) * (
                         self.discount_rate * current_value.value - previous_value.value)
 
                 self.state_values[previous_transition.state] = previous_value

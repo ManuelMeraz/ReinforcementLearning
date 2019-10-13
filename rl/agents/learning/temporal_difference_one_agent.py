@@ -4,23 +4,26 @@ from rl.agents.learning import LearningAgent
 from rl.reprs import Value
 
 
-class TemporalDifferenceAveraging(LearningAgent):
+class TemporalDifferenceOne(LearningAgent):
     """
     Applies the temporal difference algorithm as a learning algorithm
-    V(s) = V(s) + alpha * (reward + gamma * V(s') - V(s))
+    V(s) = V(s) + alpha * (reward + V(s') - V(s))
     Where alpha is the learning rate at 1 / (N + 1)
-    Gamma is the discount rate
     """
 
-    def __init__(self, discount_rate: float, *args, **kwargs):
+    def __init__(self, learning_rate: float, discount_rate: float, *args, **kwargs):
+        """
+        Represents an agent learning with temporal difference
+        :param learning_rate: How much to learn from the most recent action
+        """
         super().__init__(*args, **kwargs)
-        self.discount_rate = discount_rate
+        self.learning_rate: float = learning_rate
+        self.discount_rate: float = discount_rate
 
     def learn_value(self):
         """
         Apply temporal difference learning and update the state and values of this agent
         """
-
         current_transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
