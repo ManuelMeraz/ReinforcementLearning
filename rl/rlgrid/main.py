@@ -19,6 +19,10 @@ from rl.utils.io_utils import save_learning_agent, load_learning_agent
 from rl.utils.logging_utils import Logger
 
 
+def learning_rate(n):
+    return 1 / n
+
+
 def get_state(obs, env):
     state = numpy.concatenate((obs["image"], obs["direction"],), axis=None)
     # if env.carrying is None:
@@ -34,14 +38,14 @@ def learn_from_game(args):
     builder = args[0]
     num_games = args[1]
     env_name = args[2]
+    agent_id = args[3]
 
     env = gym.make(env_name)
 
     agent = builder.make()
     obs: numpy.ndarray = env.reset()
     state = get_state(obs, env)
-
-    for _ in range(num_games):
+    for _ in tqdm(range(num_games), desc=f"agent: {agent_id}", total=num_games):
         while True:
             action: int = agent.act(state, available_actions=numpy.array([0, 1, 2]))
 
@@ -80,11 +84,16 @@ def learn(builder: AgentBuilder, env_name: str, num_episodes: int, num_agents: i
 
     main_agent = builder.make()
     chunksize = math.floor(num_agents / processes)
-    with multiprocessing.Pool(processes=processes) as pool:
-        agents = ((builder, num_episodes, env_name) for _ in range(num_agents))
 
+    with multiprocessing.Pool(processes=processes) as pool:
+        agents = ((builder, num_episodes, env_name, agent_id + 1, num_agents) for agent_id in range(num_agents))
+
+        os.system('clear')
         print("Playing games...")
-        for agent in tqdm(pool.imap_unordered(learn_from_game, iterable=agents, chunksize=chunksize), total=num_agents):
+        agents = pool.map(learn_from_game, iterable=agents, chunksize=chunksize)
+
+        print("Merging knowledge...")
+        for agent in tqdm(agents, desc="Merging agents", total=num_agents):
             main_agent.merge(agent)
 
     policy_filename = os.path.join("policies", f"{env_name}.pickle")
@@ -126,10 +135,6 @@ def keyboard_interrupt_handler(signal, frame):
 
 
 def main():
-    global learning_rate
-
-    def learning_rate(n):
-        return 1 / n
 
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
@@ -168,7 +173,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
         env = gym.make(suboptions.env_name)
 
-        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceOne")
+        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZero")
         policy_filename = os.path.join("policies", f"{suboptions.env_name}.pickle")
         if suboptions.with_policy:
             state_values, transitions = load_learning_agent(suboptions.with_policy)
@@ -216,7 +221,7 @@ def main():
 
         suboptions = subparser.parse_args(sys.argv[2:])
         env = gym.make(suboptions.env_name)
-        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceOne")
+        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZero")
         policy_filename = os.path.join("policies", f"{suboptions.env_name}.pickle")
         if suboptions.with_policy:
             state_values, transitions = load_learning_agent(suboptions.with_policy)
