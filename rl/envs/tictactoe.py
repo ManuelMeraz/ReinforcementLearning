@@ -7,7 +7,7 @@ from typing import Dict, Tuple
 import gym
 import numpy
 
-from rl.utils import logging
+from rl.utils import logging_utils
 
 
 class Mark(enum.IntEnum):

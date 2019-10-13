@@ -2,7 +2,7 @@
 
 from rl.agents.learning import LearningAgent
 from rl.reprs import Value
-from rl.utils.perf import profiled
+from rl.utils.perf_utils import profiled
 
 
 class TemporalDifference(LearningAgent):

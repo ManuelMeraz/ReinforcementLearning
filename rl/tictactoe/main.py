@@ -14,12 +14,8 @@ from tqdm import tqdm
 
 from rl.agents import AgentBuilder, Agent
 from rl.envs.tictactoe import Status, Mark
-from rl.utils.io import load_learning_agent, save_learning_agent
-from rl.utils.logging import Logger
-
-
-def next_player(current_player) -> Mark:
-    return Mark.X if current_player == Mark.O else Mark.O
+from rl.utils.io_utils import load_learning_agent, save_learning_agent
+from rl.utils.logging_utils import Logger
 
 
 def available_actions(state: numpy.ndarray) -> numpy.ndarray:
@@ -34,53 +30,50 @@ def play(player_x: Agent, player_o: Agent):
     """
     env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
+    player_x.obs = numpy.append(obs, Mark.X)
+    player_o.obs = numpy.append(obs, Mark.O)
 
     players: Dict[Mark, Agent] = {
         Mark.X: player_x,
         Mark.O: player_o,
     }
 
-    observations = {
-        Mark.X: numpy.append(obs, Mark.X),
-        Mark.O: numpy.append(obs, Mark.O)
-    }
-
     env.render(mode="human")
     while True:
-        previous_player = env.next_player()
+        next_player = env.next_player()
         current_player = env.current_player()
-        action: int = players[current_player].act(observations[current_player], available_actions(obs))
+        action: int = players[current_player].act(players[current_player].obs, available_actions(obs))
 
         obs: numpy.ndarray
         reward: float
         done: bool
         info: Dict[str, Status]
         obs, reward, done, info = env.step(action)
-        players[current_player].learn(state=observations[current_player], action=action, reward=reward)
-        players[previous_player].learn(state=observations[previous_player], action=action, reward=-1 * reward)
+        players[current_player].learn(state=players[current_player].obs, action=action, reward=reward)
+        players[next_player].learn(state=players[next_player].obs, action=action, reward=-1 * reward)
 
-        observations[Mark.X] = numpy.append(obs, Mark.X)
-        observations[Mark.O] = numpy.append(obs, Mark.O)
+        player_x.obs = numpy.append(obs, Mark.X)
+        player_o.obs = numpy.append(obs, Mark.O)
 
         env.render(mode="human")
 
         if done:
             if info["status"] == Status.X_WINS:
                 print(f"The winner is X!")
-                players[Mark.X].learn(observations[Mark.X], action, reward)
-                players[Mark.O].learn(observations[Mark.O], action, -1 * reward)
+                player_x.learn(player_x.obs, action, reward)
+                player_o.learn(player_o.obs, action, -1 * reward)
             elif info["status"] == Status.O_WINS:
                 print(f"The winner is O!")
-                players[Mark.O].learn(observations[Mark.O], action, reward)
-                players[Mark.X].learn(observations[Mark.X], action, -1 * reward)
+                player_o.learn(player_o.obs, action, reward)
+                player_x.learn(player_x.obs, action, -1 * reward)
             else:
                 print("The game was a draw!")
-                players[Mark.O].learn(observations[Mark.O], action, reward)
-                players[Mark.X].learn(observations[Mark.X], action, reward)
+                player_o.learn(player_o.obs, action, reward)
+                player_x.learn(player_x.obs, action, reward)
 
             print("Playing new game.")
-            players[Mark.O].reset()
-            players[Mark.X].reset()
+            player_o.reset()
+            player_x.reset()
             obs = env.reset()
             env.render(mode="human")
 
@@ -92,49 +85,50 @@ def learn_from_game(args):
     num_cpus = args[3]
 
     td_agent = builder.make()
+    player_x = builder.make()
+    player_o = builder.make()
+
     env = gym.make("TicTacToe-v0")
     obs: numpy.ndarray = env.reset()
 
     players: Dict[Mark, Agent] = {
-        Mark.X: builder.make(),
-        Mark.O: builder.make(),
-    }
-
-    observations = {
-        Mark.X: numpy.append(obs, Mark.X),
-        Mark.O: numpy.append(obs, Mark.O)
+        Mark.X: player_x,
+        Mark.O: player_o,
     }
 
     for _ in tqdm(range(num_games), desc=f"agent: {index}", total=num_games, position=index % num_cpus):
+        player_x.obs = numpy.append(obs, Mark.X)
+        player_o.obs = numpy.append(obs, Mark.O)
+
         while True:
-            previous_player = env.next_player()
+            next_player = env.next_player()
             current_player = env.current_player()
-            action: int = players[current_player].act(observations[current_player], available_actions(obs))
+            action: int = players[current_player].act(players[current_player].obs, available_actions(obs))
 
             obs: numpy.ndarray
             reward: float
             done: bool
             info: Dict[str, Status]
             obs, reward, done, info = env.step(action)
-            players[current_player].learn(state=observations[current_player], action=action, reward=reward)
-            players[previous_player].learn(state=observations[previous_player], action=action, reward=-1 * reward)
+            players[current_player].learn(state=players[current_player].obs, action=action, reward=reward)
+            players[next_player].learn(state=players[next_player].obs, action=action, reward=-1 * reward)
 
-            observations[Mark.X] = numpy.append(obs, Mark.X)
-            observations[Mark.O] = numpy.append(obs, Mark.O)
+            player_x.obs = numpy.append(obs, Mark.X)
+            player_o.obs = numpy.append(obs, Mark.O)
 
             if done:
                 if info["status"] == Status.X_WINS:
-                    players[Mark.X].learn(observations[Mark.X], action, reward)
-                    players[Mark.O].learn(observations[Mark.O], action, -1 * reward)
+                    player_x.learn(player_x.obs, action, reward)
+                    player_o.learn(player_o.obs, action, -1 * reward)
                 elif info["status"] == Status.O_WINS:
-                    players[Mark.O].learn(observations[Mark.O], action, reward)
-                    players[Mark.X].learn(observations[Mark.X], action, -1 * reward)
+                    player_o.learn(player_o.obs, action, reward)
+                    player_x.learn(player_x.obs, action, -1 * reward)
                 else:
-                    players[Mark.O].learn(observations[Mark.O], action, reward)
-                    players[Mark.X].learn(observations[Mark.X], action, reward)
+                    player_o.learn(player_o.obs, action, reward)
+                    player_x.learn(player_x.obs, action, reward)
 
-                players[Mark.O].reset()
-                players[Mark.X].reset()
+                player_o.reset()
+                player_x.reset()
                 obs = env.reset()
                 break
 

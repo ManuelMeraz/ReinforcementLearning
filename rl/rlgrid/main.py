@@ -15,8 +15,8 @@ import numpy
 from tqdm import tqdm
 
 from rl.reprs import Transition
-from rl.utils.io import save_learning_agent, load_learning_agent
-from rl.utils.logging import Logger
+from rl.utils.io_utils import save_learning_agent, load_learning_agent
+from rl.utils.logging_utils import Logger
 
 
 def get_state(obs, env):

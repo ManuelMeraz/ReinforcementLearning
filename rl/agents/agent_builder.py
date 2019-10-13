@@ -19,11 +19,11 @@ class AgentBuilder:
 
         self.learning_agent = learning
         self.policy_agent = policy
+        self.is_set = False
 
         # Constructors arguments
         self.args = []
         self.kwargs = {}
-        self.is_set = False
 
     def add(self, agent_type: str):
         assert agent_type in self.registry, "Invalid agent type"

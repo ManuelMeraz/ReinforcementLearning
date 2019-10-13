@@ -13,7 +13,7 @@ import numpy
 
 from rl.bandits import EGreedySampleAveraging, EGreedyWeightedAveraging
 from rl.reprs import Transition, Value
-from rl.utils.logging import Logger
+from rl.utils.logging_utils import Logger
 
 
 def play(agent, env_name, num_episodes=1000):

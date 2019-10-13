@@ -1,12 +1,11 @@
 #! /usr/bin/env python3
 import json
 from collections import defaultdict, Counter
-from typing import Dict, Tuple, Union
 
 from rl.reprs import Value
 
 
-def load_learning_agent(filename: str) -> Dict[Tuple[Union[int, float]], Value]:
+def load_learning_agent(filename: str):
     """
     Load data from csv file and convert it to state values
     :param filename: The name of a csv file containing the data
@@ -57,32 +56,3 @@ def save_learning_agent(agent, filename: str):
 
     with open(filename, "w") as f:
         json.dump(data, f, sort_keys=True, indent=2)
-
-# def load_transitions(filename: str):
-#     """
-#     Load data from csv file and convert it to state values
-#     :param filename: The name of a csv file containing the data
-#     :return: The state value mapping
-#     """
-#     data = pandas.read_csv(filename)
-#     data = data.values.tolist()
-#
-#     transitions = defaultdict(lambda: defaultdict(Value))
-#     for d in data[1:]:
-#         transitions[tuple(d[1:11])] = Value(value=d[11], count=d[12])
-#     return transitions
-#
-#
-# def save_transitions(transitions, filename: str):
-#     """
-#     Save the state values into a csv file
-#     :param transitions: The state value mapping
-#     :param filename: The name of the file to write to
-#     """
-#     data = []
-#     for key, value in transitions.items():
-#         if value.count > 0:
-#             data.append((*key, value.value, value.count))
-#
-#     df = pandas.DataFrame(data)
-#     df.to_csv(filename)
