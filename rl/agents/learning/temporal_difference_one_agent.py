@@ -9,15 +9,17 @@ from rl.reprs import Value
 
 class TemporalDifferenceOne(LearningAgent):
     """
-    Applies the temporal difference algorithm as a learning algorithm
-    V(s) = V(s) + alpha * (reward + V(s') - V(s))
-    Where alpha is the learning rate at 1 / (N + 1)
+    Applies the temporal difference one algorithm as a learning algorithm
+    Vt+1(s) = Vt(s) + alpha * (Gt - Vt(s))
+    Where alpha is the learning rate and Gt is the sum of accumulated and discounted rewards for the episode.
+    Learns at the end of the episode from the trajectory it took after it is reset.
     """
 
     def __init__(self, learning_rate: Callable[[int], float], discount_rate: float, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
         :param learning_rate: Either a float or a function that takes in the count (N) of that state and returns 1/N
+        :param discount_rate: The proportion of the future rewards applies to earlier states
         """
         super().__init__(*args, **kwargs)
         self.learning_rate: Callable[[int], float] = learning_rate
@@ -25,13 +27,16 @@ class TemporalDifferenceOne(LearningAgent):
 
     def learn_value(self):
         """
-        Apply temporal difference learning and update the state and values of this agent
+        For this agent keep track of how many times it has visited the latest state
         """
         current_transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
 
     def reset(self):
+        """
+        Reset the trajectory of the agent for this episode and applies the TD(1) learning algorithm.
+        """
         n = len(self.trajectory)
         discount_rates = numpy.zeros(shape=(n, n), dtype='f4')
         rewards = numpy.zeros(n, dtype='f4')

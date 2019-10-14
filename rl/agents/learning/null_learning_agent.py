@@ -5,7 +5,8 @@ from rl.agents.learning import LearningAgent
 
 class NullLearning(LearningAgent):
     """
-    The learning agent implements a learning method and is used for purposes of building a state value map
+    The null learning agent is an agent that does nothing. This is used for the agent builder when a learning
+    agent is not required, and only a policy agent is desired for building an agent.
     """
 
     def __init__(self, *args, **kwargs):

@@ -8,6 +8,9 @@ from rl.agents.agent import Agent
 
 
 class PolicyAgent(Agent):
+    """
+    The policy agents main purpose is to implement the acting method.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

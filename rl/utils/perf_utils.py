@@ -8,12 +8,10 @@ from pstats import SortKey
 
 def profiled(function):
     """
-    Decorator that calls logging.debug on the arguments and return value for the
-    function it decorates.
-
+    Decorator that calls profiles a function and prints out statistics
     Usage:
 
-    @logging_tools.logged
+    @perf_tools.profiled
     def func():
         // code
 

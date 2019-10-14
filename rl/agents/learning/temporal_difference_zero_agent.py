@@ -7,9 +7,9 @@ from rl.reprs import Value
 
 class TemporalDifferenceZero(LearningAgent):
     """
-    Applies the temporal difference algorithm as a learning algorithm
-    V(s) = V(s) + alpha * (reward + V(s') - V(s))
-    Where alpha is the learning rate at 1 / (N + 1)
+    Applies the temporal difference zero (TD(0)) algorithm as a learning algorithm
+    Vt+1(s) = Vt(s) + alpha * (reward + gamma * Vt(s') - Vt(s))
+    Where alpha is the learning rate and gamma is the discount rate.
     """
 
     def __init__(self, learning_rate: Callable[[int], float], discount_rate: float, *args, **kwargs):

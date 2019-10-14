@@ -1,26 +1,24 @@
 #! /usr/bin/env python3
-from typing import Dict, Tuple, Union
 
 from rl.agents.learning import LearningAgent
 from rl.reprs import Value
 
 
 class WeightedAveraging(LearningAgent):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     """
-    Applies the temporal difference algorithm as a learning algorithm
-    V(s) = V(s) + alpha * (reward + V(s') - V(s))
-    Where alpha is the learning rate at 1 / (N + 1)
+    This agent learns by applying the sample averaging algorithm. It uses a rolling average to approximate
+    a value function.
+
+    Vt+1(s) = Vt(s) + alpha * (Rt - Vt(s))
+    Where alpha is some real number between 0 and 1
     """
 
-    def __init__(self, learning_rate, state_values: Dict[Tuple[Union[int, float]], Value] = None, transitions=None):
+    def __init__(self, learning_rate, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
         :param state_values: A mapping of states to and their associated values
         """
-        super().__init__(state_values=state_values, transitions=transitions)
+        super().__init__(*args, **kwargs)
         self.learning_rate = learning_rate
 
     def learn_value(self):

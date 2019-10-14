@@ -6,6 +6,10 @@ from .policy_agent import PolicyAgent
 
 
 class NullPolicy(PolicyAgent):
+    """
+    The null policy agent is an agent that does nothing. This is used for the agent builder when a policy
+    agent is not required, and only a learning agent is desired for building an agent.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

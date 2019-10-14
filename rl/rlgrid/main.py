@@ -138,7 +138,7 @@ def main():
 
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
-    parser = argparse.ArgumentParser();
+    parser = argparse.ArgumentParser()
     parser.add_argument("command", help="Play a game of TicTacToe or Train the EGreedySampleAveraging agent.")
     if len(sys.argv) <= 1:
         parser.print_help()
@@ -201,7 +201,7 @@ def main():
                                help="The number of agents to pit against themselves.", type=int, default=0)
         subparser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
                                type=float,
-                               default=0.5)
+                               default=0.1)
         subparser.add_argument("-l", "--learning-rate", help="The learning rate for TD learning.",
                                type=float,
                                default=0.5)

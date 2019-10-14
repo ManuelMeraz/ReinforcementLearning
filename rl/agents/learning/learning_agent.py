@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 from abc import abstractmethod
 from collections import defaultdict, Counter
-from typing import Tuple
+from typing import Tuple, Dict, Union, List
 
 import numpy
 
@@ -12,11 +12,22 @@ from rl.reprs.value import Value
 
 class LearningAgent(Agent):
     """
-    The learning agent implements a learning method and is used for purposes of building a state value map
+    The learning agent implements a learning method and keeps track of the trajectoty of the agent, it's state-value map,
+    and tracks how it has transitioned from states to other states by mapping state action tuples to a counter of states
+    it has landed in.
     """
 
-    def __init__(self, state_values=None, transitions=None):
-        self.trajectory = []
+    def __init__(self, state_values: Dict[Tuple[Union[float, int]], Value] = None,
+                 transitions: Dict[Tuple[Union[float, int]], Counter] = None):
+        """
+        All learning agents may be initialized from state values and transitions any other learning agent has learned
+        :param state_values: A mapping of tuples to a Value struct that tracks how many times the agent has landed in that
+                             state and what the value approximation of that state is
+        :param transitions: A mapping of state-action tuples that map to what states it has transitioned to and how many
+                            times it has transitioned into that state after committing to that action from the original
+                            state
+        """
+        self.trajectory: List[Transition] = []
 
         if state_values is None:
             self.state_values = defaultdict(Value)

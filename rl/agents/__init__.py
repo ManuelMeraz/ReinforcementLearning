@@ -8,7 +8,6 @@ from .learning import TemporalDifferenceOne
 from .learning import TemporalDifferenceZero
 from .learning import WeightedAveraging
 # policy agents
-from .policy import DecayingEGreedy
 from .policy import EGreedy
 from .policy import Human
 from .policy import NullPolicy

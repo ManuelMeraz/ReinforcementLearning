@@ -6,23 +6,20 @@ from rl.reprs import Value, Transition
 
 class SampleAveraging(LearningAgent):
     """
-    Applies the temporal difference algorithm as a learning algorithm
-    V(s) = V(s) + alpha * (reward + V(s') - V(s))
-    Where alpha is the learning rate at 1 / (N + 1)
+    This agent learns by applying the sample averaging algorithm. It uses a rolling average to approximate
+    a value function.
+
+    Vt+1(s) = Vt(s) + alpha * (Rt - Vt(s))
+    Where alpha is 1/N
     """
 
     def __init__(self, *args, **kwargs):
-        """
-        Represents an agent learning with temporal difference
-        :param state_values: A mapping of states to and their associated values
-        """
         super().__init__(*args, **kwargs)
 
     def learn_value(self):
         """
-        Apply temporal difference learning and update the state and values of this agent
+        Apply sample averaging learning and update the state and values of this agent
         """
-
         current_transition: Transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
         current_value.count += 1
