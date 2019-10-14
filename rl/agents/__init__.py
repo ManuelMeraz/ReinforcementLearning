@@ -13,3 +13,5 @@ from .policy import Human
 from .policy import NullPolicy
 from .policy import PolicyAgent
 from .policy import Random
+from .reprs import Transition
+from .reprs import Value

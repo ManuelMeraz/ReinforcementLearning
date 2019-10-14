@@ -6,8 +6,8 @@ from typing import Tuple, Dict, Union, List
 import numpy
 
 from rl.agents.agent import Agent
-from rl.reprs import Transition
-from rl.reprs.value import Value
+from rl.agents.reprs import Transition
+from rl.agents.reprs.value import Value
 
 
 class LearningAgent(Agent):

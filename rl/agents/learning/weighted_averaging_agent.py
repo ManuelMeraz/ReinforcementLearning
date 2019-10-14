@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from rl.agents.learning import LearningAgent
-from rl.reprs import Value
+from rl.agents.reprs import Value
 
 
 class WeightedAveraging(LearningAgent):

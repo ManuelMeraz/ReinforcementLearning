@@ -1,3 +1,0 @@
-import gym_bandits; gym_bandits.environments
-from .epsilon_greedy_sample_averaging import EGreedySampleAveraging
-from .epsilon_greedy_weighted_averaging import EGreedyWeightedAveraging

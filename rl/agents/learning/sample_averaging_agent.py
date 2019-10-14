@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from rl.agents.learning import LearningAgent
-from rl.reprs import Value, Transition
+from rl.agents.reprs import Value, Transition
 
 
 class SampleAveraging(LearningAgent):

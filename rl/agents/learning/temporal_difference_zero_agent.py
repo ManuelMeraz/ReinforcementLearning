@@ -2,7 +2,7 @@
 from typing import Callable
 
 from rl.agents.learning import LearningAgent
-from rl.reprs import Value
+from rl.agents.reprs import Value
 
 
 class TemporalDifferenceZero(LearningAgent):

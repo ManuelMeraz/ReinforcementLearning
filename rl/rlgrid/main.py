@@ -20,7 +20,11 @@ from rl.utils.logging_utils import Logger
 
 
 def learning_rate(n):
-    return 1 / n
+    return 0.5
+
+
+def available_actions():
+    return numpy.arange(7)
 
 
 def get_state(obs, env):
@@ -30,7 +34,7 @@ def get_state(obs, env):
     # else:
     #     carrying = 1
     # state = numpy.concatenate((env.agent_pos, env.agent_dir, carrying), axis=None)
-    # state = numpy.concatenate((env.agent_pos, obs["direction"],), axis=None)
+    # state = numpy.concatenate((obs["image"], env.agent_pos, obs["direction"],), axis=None)
     return state
 
 
@@ -47,7 +51,7 @@ def learn_from_game(args):
     state = get_state(obs, env)
     for _ in tqdm(range(num_games), desc=f"agent: {agent_id}", total=num_games):
         while True:
-            action: int = agent.act(state, available_actions=numpy.array([0, 1, 2]))
+            action: int = agent.act(state, available_actions=available_actions())
 
             obs, reward, done, info = env.step(action)
 
@@ -111,7 +115,7 @@ def play(agent, env, episodes=100):
     for _ in range(episodes):
         while True:
             renderer = env.render()
-            action: int = agent.act(state, available_actions=numpy.array([0, 1, 2]))
+            action: int = agent.act(state, available_actions=available_actions())
             prior_state = state
             obs, reward, done, info = env.step(action)
             state = get_state(obs, env)
@@ -135,7 +139,6 @@ def keyboard_interrupt_handler(signal, frame):
 
 
 def main():
-
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     parser = argparse.ArgumentParser()

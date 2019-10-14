@@ -4,7 +4,7 @@ from typing import Callable
 import numpy
 
 from rl.agents.learning import LearningAgent
-from rl.reprs import Value
+from rl.agents.reprs import Value
 
 
 class TemporalDifferenceOne(LearningAgent):
@@ -55,7 +55,7 @@ class TemporalDifferenceOne(LearningAgent):
         values = discount_rates.dot(rewards) - values
         for i, transition in enumerate(self.trajectory):
             value = self.state_values[transition.state]
-            value.value = values[i] / value.count
+            value.value = self.learning_rate(value.count) * values[i]
             self.state_values[transition.state] = value
 
         self.trajectory.clear()

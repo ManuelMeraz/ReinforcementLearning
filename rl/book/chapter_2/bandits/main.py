@@ -10,10 +10,15 @@ from collections import defaultdict, Counter
 import gym
 import matplotlib.pyplot as plt
 import numpy
+from tqdm import tqdm
 
-from rl.bandits import EGreedySampleAveraging, EGreedyWeightedAveraging
-from rl.reprs import Transition, Value
+from rl.agents import AgentBuilder
+from rl.agents.reprs import Value
 from rl.utils.logging_utils import Logger
+
+
+def available_actions():
+    return numpy.arange(10)
 
 
 def play(agent, env_name, num_episodes=1000):
@@ -23,14 +28,12 @@ def play(agent, env_name, num_episodes=1000):
     state = numpy.array([env.action_space.sample()])
     rewards = numpy.zeros(num_episodes)
     for ep in range(num_episodes):
-        action = agent.act(state)
+        action = agent.act(state, available_actions())
 
         obs, reward, done, info = env.step(action)
         state = numpy.array([action])
         rewards[ep] = reward
-        transition = Transition(state=state, action=action, reward=reward)
-        agent.learn(transition)
-        # print(f"action: {action} reward: {reward} episodes: {ep + 1}")
+        agent.learn(state=state, action=action, reward=reward)
 
     agent.reset()
     agent.state_values = defaultdict(Value)
@@ -51,7 +54,7 @@ def main():
                         default=2000)
     parser.add_argument("-ni", "--num-iterations", help="The number of iterations per bandit simulation",
                         type=int,
-                        default=1000)
+                        default=100)
     parser.add_argument("-a", "--agent", help="The type of agent to use", choices=["EGSA", "EGWA", "DEGSA", "DEGWA"],
                         type=str,
                         default="EGSA")
@@ -77,14 +80,12 @@ def main():
     options = parser.parse_args()
 
     agent_types = {
-        "EGSA": EGreedySampleAveraging,
-        "EGWA": EGreedyWeightedAveraging
-    }
-    env = gym.make(options.env_name)
-    constructor_kwargs = {
-        "action_space": env.action_space,
+        "EGSA": ("EGreedy", "SampleAveraging"),
+        "EGWA": ("EGreedy", "WeightedAveraging"),
     }
 
+    env = gym.make(options.env_name)
+    constructor_kwargs = {}
     if options.agent == "EGWA" or options.agent == "DEGWA":
         constructor_kwargs["learning_rate"] = options.learning_rate
 
@@ -93,13 +94,15 @@ def main():
     agents = []
     for e in exploratory_rates:
         constructor_kwargs["exploratory_rate"] = e
-        agents.append(agent_types[options.agent](**constructor_kwargs))
+        builder = AgentBuilder(*agent_types[options.agent])
+        builder.set(**constructor_kwargs)
+        agents.append(builder.make())
 
     fig, ax = plt.subplots(figsize=(10, 8))
 
     for agent in agents:
         rewards = numpy.zeros(options.num_iterations)
-        for run in range(options.num_episodes):
+        for run in tqdm(range(options.num_episodes), total=options.num_episodes):
             new_rewards = play(agent, options.env_name, num_episodes=options.num_iterations)
             for i in range(options.num_iterations):
                 rewards[i] += (1 / (run + 1)) * (new_rewards[i] - rewards[i])
