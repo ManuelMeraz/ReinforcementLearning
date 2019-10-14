@@ -1,6 +1,4 @@
 #! /usr/bin/env python3
-from typing import Callable
-
 import numpy
 
 from rl.agents.learning import LearningAgent
@@ -15,14 +13,14 @@ class TemporalDifferenceOne(LearningAgent):
     Learns at the end of the episode from the trajectory it took after it is reset.
     """
 
-    def __init__(self, learning_rate: Callable[[int], float], discount_rate: float, *args, **kwargs):
+    def __init__(self, learning_rate: float, discount_rate: float, *args, **kwargs):
         """
         Represents an agent learning with temporal difference
         :param learning_rate: Either a float or a function that takes in the count (N) of that state and returns 1/N
         :param discount_rate: The proportion of the future rewards applies to earlier states
         """
         super().__init__(*args, **kwargs)
-        self.learning_rate: Callable[[int], float] = learning_rate
+        self.learning_rate: float = learning_rate
         self.discount_rate: float = discount_rate
 
     def learn_value(self):
@@ -55,7 +53,7 @@ class TemporalDifferenceOne(LearningAgent):
         values = discount_rates.dot(rewards) - values
         for i, transition in enumerate(self.trajectory):
             value = self.state_values[transition.state]
-            value.value = self.learning_rate(value.count) * values[i]
+            value.value = self.learning_rate * values[i]
             self.state_values[transition.state] = value
 
         self.trajectory.clear()

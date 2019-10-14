@@ -19,10 +19,6 @@ from rl.utils.io_utils import save_learning_agent, load_learning_agent
 from rl.utils.logging_utils import Logger
 
 
-def learning_rate(n):
-    return 0.5
-
-
 def available_actions():
     return numpy.arange(7)
 
@@ -187,7 +183,7 @@ def main():
             state_values, transitions = None, None
 
         builder.set(exploratory_rate=suboptions.exploratory_rate,
-                    learning_rate=learning_rate,
+                    learning_rate=suboptions.learning_rate,
                     discount_rate=suboptions.discount_rate,
                     state_values=state_values,
                     transitions=transitions)
@@ -235,7 +231,7 @@ def main():
             state_values, transitions = None, None
 
         builder.set(exploratory_rate=suboptions.exploratory_rate,
-                    learning_rate=learning_rate,
+                    learning_rate=suboptions.learning_rate,
                     discount_rate=suboptions.discount_rate,
                     state_values=state_values,
                     transitions=transitions)

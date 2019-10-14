@@ -19,7 +19,11 @@ setuptools.setup(
     license="MIT",
     packages=setuptools.find_packages(),
     install_requires=reqs.strip().split("\n"),
-    entry_points={"console_scripts": ["tictactoe = rl.tictactoe.main:main",
-                                      "rlgrid = rl.rlgrid.main:main",
-                                      "rlgym = rl.rlgym.main:main"]},
+    entry_points={
+        "console_scripts": [
+            "tictactoe = rl.book.chapter_1.tictactoe.main:main",
+            "bandits = rl.book.chapter_2.main:main",
+            "rlgrid = rl.rlgrid.main:main",
+        ]
+    },
 )

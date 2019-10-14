@@ -102,7 +102,8 @@ class AgentBuilder:
 
         python_commands = [
             "global agent",
-            f"agent = {self.policy_agent}{self.learning_agent}(*self.args, **self.kwargs)"
+            "from copy import deepcopy",
+            f"agent = {self.policy_agent}{self.learning_agent}(*deepcopy(self.args), **deepcopy(self.kwargs))"
         ]
         try:
             exec("\n".join(python_commands))

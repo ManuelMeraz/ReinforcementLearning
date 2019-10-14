@@ -5,7 +5,9 @@ from .learning import LearningAgent
 from .learning import NullLearning
 from .learning import SampleAveraging
 from .learning import TemporalDifferenceOne
+from .learning import TemporalDifferenceOneAveraging
 from .learning import TemporalDifferenceZero
+from .learning import TemporalDifferenceZeroAveraging
 from .learning import WeightedAveraging
 # policy agents
 from .policy import EGreedy

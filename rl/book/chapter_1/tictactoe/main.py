@@ -18,10 +18,6 @@ from rl.utils.io_utils import load_learning_agent, save_learning_agent
 from rl.utils.logging_utils import Logger
 
 
-def learning_rate(n):
-    return 1 / n
-
-
 def available_actions(state: numpy.ndarray) -> numpy.ndarray:
     return numpy.where(state == Mark.EMPTY)[0]
 
@@ -205,7 +201,7 @@ def main():
         suboptions = subparser.parse_args(sys.argv[2:])
 
         agent_types = {"human": AgentBuilder(policy="Human"), "base": AgentBuilder(policy="Random"),
-                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZero")}
+                       "smart": AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZeroAveraging")}
 
         players = [suboptions.X, suboptions.O]
 
@@ -218,7 +214,6 @@ def main():
 
                 agent_types[player].set(exploratory_rate=0.0,
                                         discount_rate=0.5,
-                                        learning_rate=learning_rate,
                                         state_values=state_values,
                                         transitions=transitions)
 
@@ -253,9 +248,8 @@ def main():
         else:
             state_values, transitions = None, None
 
-        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZero")
+        builder = AgentBuilder(policy="EGreedy", learning="TemporalDifferenceZeroAveraging")
         builder.set(exploratory_rate=suboptions.exploratory_rate,
-                    learning_rate=learning_rate,
                     discount_rate=suboptions.discount_rate,
                     state_values=state_values,
                     transitions=transitions)
