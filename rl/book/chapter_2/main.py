@@ -83,9 +83,10 @@ def plot(data: numpy.ndarray, agent_config, image_name: str, num_iterations: int
     iterations = numpy.arange(num_iterations)
     for d, agent in zip(data, agent_config):
         rewards = d[0]
-        exploratory_rate = agent["kwargs"]["exploratory_rate"]
-        learning_rate = agent["kwargs"].get("learning_rate", "null")
-        label = f"{agent['policy']}{agent['learning']} e: {exploratory_rate} alpha: {learning_rate}"
+        label = f"{agent['policy']}{agent['learning']}"
+        for kwarg, value in agent["kwargs"].items():
+            if kwarg != "state_values" and kwarg != "transitions":
+                label += f" {kwarg[0]}: {value}"
         rewards_plot.plot(iterations, rewards, label=label)
         optimal_percentages = d[1] * 100
         percentage_plot.plot(iterations, optimal_percentages, label=label)
@@ -116,9 +117,10 @@ def run_experiment(args):
 
     rewards = numpy.zeros(num_iterations)
     percentages = numpy.zeros(num_iterations)
-    exploratory_rate = agent_config["kwargs"]["exploratory_rate"]
-    learning_rate = agent_config["kwargs"].get("learning_rate", "null")
-    label = f"{agent_config['policy']}{agent_config['learning']} e: {exploratory_rate} alpha: {learning_rate}"
+    label = f"{agent_config['policy']}{agent_config['learning']}"
+    for kwarg, value in agent_config["kwargs"].items():
+        if kwarg != "state_values" and kwarg != "transitions":
+            label += f" {kwarg[0]}: {value}"
     for ep_num in tqdm(range(num_episodes), total=num_episodes, desc=label):
         agent = builder.make()
         agent.transition_model = transition_model

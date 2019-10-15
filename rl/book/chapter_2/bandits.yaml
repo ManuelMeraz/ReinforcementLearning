@@ -6,10 +6,36 @@ arms: 10
 
 nonstationary: {
   mu: 0,
-  sigma: 0.01
+  sigma: 0.1
 }
 
 agents: [
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    decay_rate: 0.99,
+    confidence: 1,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "DecayingEGreedy",
+  learning: "WeightedAveraging",
+  kwargs: {
+    decay_rate: 0.5 ,
+    exploratory_rate: 0.1,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "EGreedy",
+  learning: "WeightedAveraging",
+  kwargs: {
+    exploratory_rate: 0.1,
+    learning_rate: 0.1,
+  }
+},
 {
   policy: "EGreedy",
   learning: "WeightedAveraging",
@@ -20,20 +46,9 @@ agents: [
   }
 },
 {
-  policy: "EGreedy",
+  policy: "Random",
   learning: "WeightedAveraging",
-  optimistic: 0,
   kwargs: {
-    exploratory_rate: 0.01,
-    learning_rate: 0.1,
-  }
-},
-{
-  policy: "EGreedy",
-  learning: "WeightedAveraging",
-  optimistic: 0,
-  kwargs: {
-    exploratory_rate: 0.1,
     learning_rate: 0.1,
   }
 },
