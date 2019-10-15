@@ -4,6 +4,7 @@ numpy
 pytest
 tqdm
 matplotlib
+pyyaml
 
 #git+https://github.com/JKCooper2/gym-bandits#egg=gym-bandits
 

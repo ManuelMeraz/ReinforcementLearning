@@ -9,11 +9,12 @@ import os
 import signal
 import sys
 from collections import defaultdict
-from typing import List
+from typing import List, Dict
 
 import gym
 import matplotlib.pyplot as plt
 import numpy
+import yaml
 from tqdm import tqdm
 
 from rl.agents import AgentBuilder
@@ -21,15 +22,27 @@ from rl.agents.reprs import Value
 from rl.utils.logging_utils import Logger
 
 
+def get_builder(agent_config, num_arms, optimistic: float):
+    if optimistic > 0:
+        state_values = defaultdict(Value)
+        for i in range(num_arms):
+            state_values[(i,)] = Value(count=0, value=optimistic)
+        agent_config["kwargs"]["state_values"] = state_values
+
+    builder = AgentBuilder(agent_config["policy"], agent_config["learning"])
+    builder.set(**agent_config["kwargs"])
+    return builder
+
+
 def transition_model(state, action):
     return numpy.array([1]), [numpy.array([action])]
 
 
-def available_actions():
-    return numpy.arange(10)
+def available_actions(num_arms):
+    return numpy.arange(num_arms)
 
 
-def play(agent, env_name, num_iterations, nonstationary):
+def play(agent, env_name, arms, num_iterations, nonstationary):
     # Create a window to render into
     env = gym.make(env_name)
     obs = env.reset()
@@ -40,12 +53,14 @@ def play(agent, env_name, num_iterations, nonstationary):
     optimal_count = 0
     for ep in range(num_iterations):
         if nonstationary:
-            adjustments = numpy.random.normal(0, 0.1, 10)
-            for i in range(10):
+            mu = nonstationary["mu"]
+            sigma = nonstationary["sigma"]
+            adjustments = numpy.random.normal(mu, sigma, arms)
+            for i in range(arms):
                 env.r_dist[i][0] += adjustments[i]
 
         optimal_action = env.r_dist.index(max(env.r_dist))
-        action = agent.act(state, available_actions())
+        action = agent.act(state, available_actions(arms))
 
         obs, reward, done, info = env.step(action)
         state = numpy.array([action])
@@ -54,8 +69,7 @@ def play(agent, env_name, num_iterations, nonstationary):
         optimal_percentages[ep] = optimal_count / (ep + 1)
         rewards[ep] = reward
         agent.learn(state=state, action=action, reward=reward)
-    # print(f"action: {action} reward: {reward}")
-    # time.sleep(0.1)
+
     return rewards, optimal_percentages
 
 
@@ -63,15 +77,18 @@ def keyboard_interrupt_handler(signal, frame):
     sys.exit(0)
 
 
-def plot(data: numpy.ndarray, exploratory_rates, image_name: str, num_iterations: int):
+def plot(data: numpy.ndarray, agent_config, image_name: str, num_iterations: int):
     fig, (rewards_plot, percentage_plot) = plt.subplots(2, 1, figsize=(10, 8))
 
     iterations = numpy.arange(num_iterations)
-    for d, e in zip(data, exploratory_rates):
+    for d, agent in zip(data, agent_config):
         rewards = d[0]
-        rewards_plot.plot(iterations, rewards, label=str(e))
+        exploratory_rate = agent["kwargs"]["exploratory_rate"]
+        learning_rate = agent["kwargs"].get("learning_rate", "null")
+        label = f"{agent['policy']}{agent['learning']} e: {exploratory_rate} alpha: {learning_rate}"
+        rewards_plot.plot(iterations, rewards, label=label)
         optimal_percentages = d[1] * 100
-        percentage_plot.plot(iterations, optimal_percentages, label=str(e))
+        percentage_plot.plot(iterations, optimal_percentages, label=label)
 
     rewards_plot.set(xlabel='Iterations', ylabel='Rewards',
                      title='Iterations vs Rewards')
@@ -88,44 +105,49 @@ def plot(data: numpy.ndarray, exploratory_rates, image_name: str, num_iterations
 
 
 def run_experiment(args):
-    builder = args[0]
-    num_episodes = args[1]
-    num_iterations = args[2]
-    env_name = args[3]
-    nonstationary = args[4]
+    agent_config = args[0]
+    arms = args[1]
+    num_episodes = args[2]
+    num_iterations = args[3]
+    env_name = args[4]
+    nonstationary = args[5]
 
-    agent = builder.make()
+    builder = get_builder(agent_config, arms, agent_config.get("optimistic", 0))
+
     rewards = numpy.zeros(num_iterations)
     percentages = numpy.zeros(num_iterations)
-    for ep_num in tqdm(range(num_episodes), total=num_episodes, desc=f"agent: {agent.exploratory_rate}"):
+    exploratory_rate = agent_config["kwargs"]["exploratory_rate"]
+    learning_rate = agent_config["kwargs"].get("learning_rate", "null")
+    label = f"{agent_config['policy']}{agent_config['learning']} e: {exploratory_rate} alpha: {learning_rate}"
+    for ep_num in tqdm(range(num_episodes), total=num_episodes, desc=label):
+        agent = builder.make()
         agent.transition_model = transition_model
-        new_rewards, optimal_percentages = play(agent, env_name, num_iterations=num_iterations,
+        new_rewards, optimal_percentages = play(agent, env_name, arms, num_iterations=num_iterations,
                                                 nonstationary=nonstationary)
         rewards += 1 / (ep_num + 1) * (new_rewards - rewards)
         percentages += 1 / (ep_num + 1) * (optimal_percentages - percentages)
-        agent = builder.make()
 
     return rewards, percentages
 
 
-def simulate(builders: List[AgentBuilder], env_name: str, num_episodes: int, num_iterations: int, nonstationary: bool):
+def simulate(agents: List[Dict], arms: int, env_name: str, num_episodes: int, num_iterations: int, nonstationary: Dict):
     """
     :param num_episodes:  The number of games to play each other
     """
     processes = multiprocessing.cpu_count()
+    print(f"Simulating bandits! Number of episodes per agent: {num_episodes} Number of agents: {len(agents)}")
+    print(f"Env: {env_name} arms: {arms}")
 
-    print(f"Simulating bandits! Number of episodes per agent: {num_episodes} Number of agents: {len(builders)}")
+    if len(agents) < processes:
+        processes = len(agents)
 
-    if len(builders) < processes:
-        processes = len(builders)
-
-    chunksize = math.floor(len(builders) / processes)
+    chunksize = math.floor(len(agents) / processes)
 
     with multiprocessing.Pool(processes=processes) as pool:
-        experiment_inputs = ((builder, num_episodes, num_iterations, env_name, nonstationary) for builder in builders)
+        experiment_inputs = ((agent_config, arms, num_episodes, num_iterations, env_name, nonstationary) for
+                             agent_config in agents)
 
         os.system('clear')
-        print("Playing games...")
         total_rewards_percentages = numpy.array(
             pool.map(run_experiment, iterable=experiment_inputs, chunksize=chunksize))
 
@@ -136,67 +158,49 @@ def main():
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("config-file", help="Configuration file to run this program.",
+                        type=str)
     parser.add_argument("-ne", "--num-episodes", help="The number of bandit simulations to run",
                         type=int,
-                        default=2000)
+                        default=False)
     parser.add_argument("-ni", "--num-iterations", help="The number of iterations per bandit simulation",
                         type=int,
-                        default=1000)
-    parser.add_argument("-a", "--agent", help="The type of agent to use", choices=["EGSA", "EGWA", "DEGSA", "DEGWA"],
-                        type=str,
-                        default="EGSA")
-    parser.add_argument("-l", "--learning-rate", help="The learning rate for weighted averaging learning.",
-                        type=float,
-                        default=0.1)
-    parser.add_argument("-e", "--exploratory-rate", help="The probability of exploring rather than exploiting.",
-                        type=float,
-                        default=0.1)
-    parser.add_argument("-ns", "--nonstationary", help="Stationary bandits.",
-                        action="store_true",
-                        default=False)
-    parser.add_argument("-op", "--optimistic", help="Make the exploratory rate=0.0 agent start with optimistic values",
-                        action="store_true",
                         default=False)
     parser.add_argument("-o", "--out-image", help="The name of the plot to be output.",
                         type=str,
-                        default="ArmedBandits")
+                        default=False)
     parser.add_argument("-env", "--env-name", help="rlgym environment to load",
                         type=str,
-                        default='BanditTenArmedGaussian-v0')
+                        default=False)
 
     logger: Logger = Logger(parser=parser)
     options = parser.parse_args()
+    with open(sys.argv[1], 'r') as f:
+        configuration = yaml.load(f, Loader=yaml.FullLoader)
 
-    agent_types = {
-        "EGSA": ("EGreedy", "SampleAveraging"),
-        "EGWA": ("EGreedy", "WeightedAveraging"),
-    }
+    if options.num_episodes:
+        configuration["num_episodes"] = options.num_episodes
 
-    constructor_kwargs = {}
-    if options.agent == "EGWA" or options.agent == "DEGWA":
-        constructor_kwargs["learning_rate"] = options.learning_rate
+    if options.num_iterations:
+        configuration["num_iterations"] = options.num_iterations
 
-    exploratory_rates = [0.0, 0.1]
+    if options.out_image:
+        configuration["out_image"] = options.out_image
 
-    builders = []
-    for e in exploratory_rates:
-        if options.optimistic and e == 0.0:
-            state_values = defaultdict(Value)
-            for i in range(10):
-                state_values[(i,)] = Value(count=0, value=5)
-            constructor_kwargs["state_values"] = state_values
+    if options.env_name:
+        configuration["env_name"] = options.env_name
 
-        constructor_kwargs["exploratory_rate"] = e
-        builder = AgentBuilder(*agent_types[options.agent])
-        builder.set(**constructor_kwargs)
-        if options.optimistic and e == 0.0:
-            del constructor_kwargs["state_values"]
-        builders.append(builder)
+    total_rewards_percentages = simulate(configuration["agents"],
+                                         configuration["arms"],
+                                         configuration["env_name"],
+                                         configuration["num_episodes"],
+                                         configuration["num_iterations"],
+                                         configuration.get("nonstationary", {}))
 
-    total_rewards_percentages = simulate(builders, options.env_name, options.num_episodes, options.num_iterations,
-                                         options.nonstationary)
-    plot(total_rewards_percentages, exploratory_rates=exploratory_rates, image_name=options.out_image,
-         num_iterations=options.num_iterations)
+    plot(total_rewards_percentages,
+         agent_config=configuration["agents"],
+         image_name=configuration["out_image"],
+         num_iterations=configuration["num_iterations"])
 
     print("done!")
 
