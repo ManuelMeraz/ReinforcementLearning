@@ -1,5 +1,5 @@
-num_episodes: 200
-num_iterations: 1000
+num_episodes: 100
+num_iterations: 10000
 out_image: ArmedBandits
 env_name: BanditTenArmedGaussian-v0
 arms: 10
@@ -14,7 +14,7 @@ agents: [
   policy: "UpperConfidenceBound",
   learning: "WeightedAveraging",
   kwargs: {
-    decay_rate: 0.99,
+    decay_rate: 5,
     confidence: 1,
     learning_rate: 0.1,
   }
@@ -24,7 +24,7 @@ agents: [
   learning: "WeightedAveraging",
   kwargs: {
     decay_rate: 0.5 ,
-    exploratory_rate: 0.2,
+    exploratory_rate: 0.1,
     learning_rate: 0.1,
   }
 },
@@ -42,13 +42,6 @@ agents: [
   optimistic: 5,
   kwargs: {
     exploratory_rate: 0.0,
-    learning_rate: 0.1,
-  }
-},
-{
-  policy: "Random",
-  learning: "WeightedAveraging",
-  kwargs: {
     learning_rate: 0.1,
   }
 },

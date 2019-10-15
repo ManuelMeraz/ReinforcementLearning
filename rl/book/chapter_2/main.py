@@ -78,7 +78,7 @@ def keyboard_interrupt_handler(signal, frame):
 
 
 def plot(data: numpy.ndarray, agent_config, image_name: str, num_iterations: int):
-    fig, (rewards_plot, percentage_plot) = plt.subplots(2, 1, figsize=(10, 8))
+    fig, (rewards_plot, percentage_plot) = plt.subplots(2, 1, figsize=(20, 16))
 
     iterations = numpy.arange(num_iterations)
     for d, agent in zip(data, agent_config):

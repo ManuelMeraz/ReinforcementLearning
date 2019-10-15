@@ -19,9 +19,9 @@ class UpperConfidenceBound(PolicyAgent):
         self.decay_rate = decay_rate
         self.confidence = confidence
 
-    def decay(self, bound, average_value):
+    def decay(self, bound, state):
         new_bound = bound * numpy.exp(-1 * self.decay_rate) + 1
-        if new_bound < average_value:
+        if new_bound < self.value_model(state):
             new_bound = sys.float_info.max
 
         return new_bound
@@ -33,10 +33,10 @@ class UpperConfidenceBound(PolicyAgent):
         :param available_actions: A list of available possible actions (positions on the board to mark)
         :return: an action
         """
-        action, average_value = self.greedy_action(state, available_actions)
+        action = self.greedy_action(state, available_actions)
         self.action_counts[action] += 1
 
-        self.upper_bounds[action] = self.decay(self.upper_bounds[action], average_value)
+        self.upper_bounds[action] = self.decay(self.upper_bounds[action], state)
         return action
 
     def greedy_action(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
@@ -49,7 +49,6 @@ class UpperConfidenceBound(PolicyAgent):
         max_value: float = float("-inf")
         max_index: int = 0
 
-        average_value = 0
         for index, action in enumerate(available_actions):
             probabilities: numpy.ndarray
             states: numpy.ndarray
@@ -61,7 +60,6 @@ class UpperConfidenceBound(PolicyAgent):
                 confidence_bound = numpy.log(self.upper_bounds[action]) / self.action_counts[action]
                 confidence_bound = self.confidence * numpy.sqrt(confidence_bound)
                 next_value: float = self.value_model(next_state)
-                average_value += next_value
                 next_value += confidence_bound
             else:
                 continue
@@ -70,5 +68,4 @@ class UpperConfidenceBound(PolicyAgent):
                 max_index: int = index
                 max_value: float = next_value
 
-        average_value /= len(available_actions)
-        return available_actions[max_index], average_value
+        return available_actions[max_index]
