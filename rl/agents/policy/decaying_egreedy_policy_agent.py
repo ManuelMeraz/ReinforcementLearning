@@ -30,13 +30,7 @@ class DecayingEGreedy(PolicyAgent):
         :param available_actions: A list of available possible actions (positions on the board to mark)
         :return: an action
         """
-        action, state = self.egreedy_policy(state, available_actions)
-        value = self.value_model(action)
-
-        if value < self.previous_value:
-            self.reset_exploratory_rate()
-
-        return action
+        return self.egreedy_policy(state, available_actions)
 
     def egreedy_policy(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
         """
@@ -50,7 +44,11 @@ class DecayingEGreedy(PolicyAgent):
         if e < self.exploratory_rate:
             action: int = numpy.random.choice(available_actions)
         else:
-            action: int = self.greedy_action(state, available_actions)
+            action, state = self.greedy_action(state, available_actions)
+            value = self.value_model(state)
+
+            if value < self.previous_value:
+                self.reset_exploratory_rate()
 
         return action
 

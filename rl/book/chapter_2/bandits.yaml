@@ -24,7 +24,7 @@ agents: [
   learning: "WeightedAveraging",
   kwargs: {
     decay_rate: 0.5 ,
-    exploratory_rate: 0.1,
+    exploratory_rate: 0.2,
     learning_rate: 0.1,
   }
 },
