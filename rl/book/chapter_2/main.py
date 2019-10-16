@@ -181,6 +181,8 @@ def main():
     with open(sys.argv[1], 'r') as f:
         if hasattr(yaml, "FullLoader"):
             configuration = yaml.load(f, Loader=yaml.FullLoader)
+        else:
+            configuration = yaml.load(f)
 
     if options.num_episodes:
         configuration["num_episodes"] = options.num_episodes
