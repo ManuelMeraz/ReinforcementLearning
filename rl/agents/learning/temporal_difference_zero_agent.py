@@ -19,6 +19,7 @@ class TemporalDifferenceZero(LearningAgent):
         super().__init__(*args, **kwargs)
         self.learning_rate: float = learning_rate
         self.discount_rate: float = discount_rate
+        self.trace: float = 0
 
     def learn_value(self):
         """
@@ -29,11 +30,15 @@ class TemporalDifferenceZero(LearningAgent):
         current_value.count += 1
         current_value.value += current_transition.reward
 
+        # Unbiased constant step size trick
+        self.trace = self.trace + self.learning_rate * (1 - self.trace)
+
         if current_value.value != 0:
             previous_transition = self.trajectory[-2]
             previous_value: Value = self.state_values[previous_transition.state]
+            step_size = self.learning_rate / self.trace
 
-            previous_value.value += self.learning_rate * (
+            previous_value.value += step_size * (
                     self.discount_rate * current_value.value - previous_value.value)
 
             self.state_values[previous_transition.state] = previous_value

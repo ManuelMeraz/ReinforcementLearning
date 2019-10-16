@@ -22,6 +22,7 @@ class TemporalDifferenceOne(LearningAgent):
         super().__init__(*args, **kwargs)
         self.learning_rate: float = learning_rate
         self.discount_rate: float = discount_rate
+        self.trace: float = 0
 
     def learn_value(self):
         """
@@ -50,10 +51,14 @@ class TemporalDifferenceOne(LearningAgent):
             rewards[i] = transition.reward
             values[i] = self.state_values[transition.state].value
 
+        # Unbiased constant step size trick
+        self.trace = self.trace + self.learning_rate * (1 - self.trace)
+        step_size = self.learning_rate / self.trace
+
         values = discount_rates.dot(rewards) - values
         for i, transition in enumerate(self.trajectory):
             value = self.state_values[transition.state]
-            value.value = self.learning_rate * values[i]
+            value.value = step_size * values[i]
             self.state_values[transition.state] = value
 
         self.trajectory.clear()

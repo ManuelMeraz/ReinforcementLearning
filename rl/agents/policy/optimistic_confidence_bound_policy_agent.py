@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import sys
 from collections import defaultdict
 
 import numpy
@@ -6,16 +7,24 @@ import numpy
 from .policy_agent import PolicyAgent
 
 
-class UpperConfidenceBound(PolicyAgent):
-    def __init__(self, confidence: float, *args, **kwargs):
+class OptimisticConfidenceBound(PolicyAgent):
+    def __init__(self, confidence: float, decay_rate: float, *args, **kwargs):
         """
         This agent implements a method that picks an action using an egreedy policy
         :param exploratory_rate: The probably of selecting an action at random from a uniform distribution
         """
         super().__init__(*args, **kwargs)
-        self.times = defaultdict(lambda: 1)
+        self.upper_bounds = defaultdict(lambda: sys.float_info.max)
         self.action_counts = defaultdict(lambda: 1)
+        self.decay_rate = decay_rate
         self.confidence = confidence
+
+    def decay(self, bound, state):
+        new_bound = bound * numpy.exp(-1 * self.decay_rate) + 1
+        if self.confidence * new_bound < self.value_model(state):
+            new_bound = sys.float_info.max
+
+        return new_bound
 
     def act(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
         """
@@ -27,11 +36,7 @@ class UpperConfidenceBound(PolicyAgent):
         action = self.greedy_action(state, available_actions)
         self.action_counts[action] += 1
 
-        index_of_action = numpy.where(available_actions == action)[0][0]
-        other_actions = numpy.delete(available_actions, index_of_action)
-        for a in other_actions:
-            self.times[a] += 1
-
+        self.upper_bounds[action] = self.decay(self.upper_bounds[action], state)
         return action
 
     def greedy_action(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
@@ -52,9 +57,10 @@ class UpperConfidenceBound(PolicyAgent):
             if probabilities.any():
                 transition_index = numpy.random.choice(numpy.arange(len(states)), p=probabilities)
                 next_state: numpy.ndarray = states[transition_index]
-                confidence_bound = numpy.log(self.times[action]) / self.action_counts[action]
+                confidence_bound = numpy.log(self.upper_bounds[action]) / self.action_counts[action]
                 confidence_bound = self.confidence * numpy.sqrt(confidence_bound)
-                next_value: float = self.value_model(next_state) + confidence_bound
+                next_value: float = self.value_model(next_state)
+                next_value += confidence_bound
             else:
                 continue
 

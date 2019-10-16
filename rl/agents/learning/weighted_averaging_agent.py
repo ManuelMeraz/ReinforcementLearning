@@ -20,6 +20,7 @@ class WeightedAveraging(LearningAgent):
         """
         super().__init__(*args, **kwargs)
         self.learning_rate = learning_rate
+        self.trace = 0
 
     def learn_value(self):
         """
@@ -28,5 +29,9 @@ class WeightedAveraging(LearningAgent):
 
         current_transition = self.trajectory[-1]
         current_value: Value = self.state_values[current_transition.state]
-        current_value.value += self.learning_rate * (current_transition.reward - current_value.value)
+
+        self.trace = self.trace + self.learning_rate * (1 - self.trace)
+        step_size = self.learning_rate / self.trace
+
+        current_value.value += step_size * (current_transition.reward - current_value.value)
         self.state_values[current_transition.state] = current_value

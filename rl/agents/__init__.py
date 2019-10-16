@@ -14,6 +14,7 @@ from .policy import DecayingEGreedy
 from .policy import EGreedy
 from .policy import Human
 from .policy import NullPolicy
+from .policy import OptimisticConfidenceBound
 from .policy import PolicyAgent
 from .policy import Random
 from .policy import UpperConfidenceBound

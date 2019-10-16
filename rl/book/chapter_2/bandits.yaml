@@ -14,17 +14,7 @@ agents: [
   policy: "UpperConfidenceBound",
   learning: "WeightedAveraging",
   kwargs: {
-    decay_rate: 5,
-    confidence: 1,
-    learning_rate: 0.1,
-  }
-},
-{
-  policy: "DecayingEGreedy",
-  learning: "WeightedAveraging",
-  kwargs: {
-    decay_rate: 0.5 ,
-    exploratory_rate: 0.1,
+    confidence: 5,
     learning_rate: 0.1,
   }
 },
@@ -33,15 +23,6 @@ agents: [
   learning: "WeightedAveraging",
   kwargs: {
     exploratory_rate: 0.1,
-    learning_rate: 0.1,
-  }
-},
-{
-  policy: "EGreedy",
-  learning: "WeightedAveraging",
-  optimistic: 5,
-  kwargs: {
-    exploratory_rate: 0.0,
     learning_rate: 0.1,
   }
 },
