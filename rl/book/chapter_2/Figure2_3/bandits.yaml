@@ -1,6 +1,6 @@
-num_episodes: 1000
+num_episodes: 2000
 num_iterations: 1000
-out_image: ucb_egreedy_nonstationary001variance
+out_image: ArmedBandits
 env_name: BanditTenArmedGaussian-v0
 arms: 10
 
@@ -11,12 +11,13 @@ nonstationary: {
 
 agents: [
 {
-  policy: "UpperConfidenceBound",
+  policy: "Egreedy",
   learning: "WeightedAveraging",
-  kwargs: {
-    confidence: 2,
-    learning_rate: 0.1,
-  }
+  optimistic: 5
+    kwargs: {
+      exploratory_rate: 0.0,
+      learning_rate: 0.1,
+    }
 },
 {
   policy: "EGreedy",

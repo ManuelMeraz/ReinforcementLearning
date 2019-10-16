@@ -1,0 +1,32 @@
+num_episodes: 2000
+num_iterations: 1000
+out_image: ArmedBandits
+env_name: BanditTenArmedGaussian-v0
+arms: 10
+
+agents: [
+{
+  policy: "EGreedy",
+  learning: "SamplingAveraging",
+  kwargs: {
+    exploratory_rate: 0.0,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "EGreedy",
+  learning: "SamplingAveraging",
+  kwargs: {
+    exploratory_rate: 0.01,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "EGreedy",
+  learning: "SamplingAveraging",
+  kwargs: {
+    exploratory_rate: 0.1,
+    learning_rate: 0.1,
+  }
+},
+]
