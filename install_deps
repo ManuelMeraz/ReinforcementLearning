@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
-pip3 install --upgrade pip
-pip3 install -e . --upgrade --no-cache-dir --progress-bar off
+python3 -m pip install --user --upgrade pip
+python3 -m pip install --user -e . --upgrade --no-cache-dir --progress-bar off
+python3 -m pip install --user git+https://github.com/JKCooper2/gym-bandits#egg=gym-bandits
+
+#"Then you will need to install libgl1-mesa-dev"
+#"Also depends on libxkbcommon-x11-dev"

@@ -103,6 +103,7 @@ def plot(data: numpy.ndarray, agent_config, image_name: str, num_iterations: int
     percentage_plot.legend()
     plt.tight_layout()
     plt.savefig(image_name, dpi=100)
+    plt.plot()
 
 
 def run_experiment(args):
