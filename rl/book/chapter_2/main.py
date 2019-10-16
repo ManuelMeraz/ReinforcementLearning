@@ -179,7 +179,8 @@ def main():
     logger: Logger = Logger(parser=parser)
     options = parser.parse_args()
     with open(sys.argv[1], 'r') as f:
-        configuration = yaml.load(f, Loader=yaml.FullLoader)
+        if hasattr(yaml, "FullLoader"):
+            configuration = yaml.load(f, Loader=yaml.FullLoader)
 
     if options.num_episodes:
         configuration["num_episodes"] = options.num_episodes
