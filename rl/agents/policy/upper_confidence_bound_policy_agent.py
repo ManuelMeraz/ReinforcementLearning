@@ -13,9 +13,9 @@ class UpperConfidenceBound(PolicyAgent):
         :param exploratory_rate: The probably of selecting an action at random from a uniform distribution
         """
         super().__init__(*args, **kwargs)
-        self.times = defaultdict(lambda: 1)
         self.action_counts = defaultdict(lambda: 1)
         self.confidence = confidence
+        self.time = 1
 
     def act(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
         """
@@ -26,12 +26,7 @@ class UpperConfidenceBound(PolicyAgent):
         """
         action = self.greedy_action(state, available_actions)
         self.action_counts[action] += 1
-
-        index_of_action = numpy.where(available_actions == action)[0][0]
-        other_actions = numpy.delete(available_actions, index_of_action)
-        for a in other_actions:
-            self.times[a] += 1
-
+        self.time += 1
         return action
 
     def greedy_action(self, state: numpy.ndarray, available_actions: numpy.ndarray) -> int:
@@ -52,7 +47,7 @@ class UpperConfidenceBound(PolicyAgent):
             if probabilities.any():
                 transition_index = numpy.random.choice(numpy.arange(len(states)), p=probabilities)
                 next_state: numpy.ndarray = states[transition_index]
-                confidence_bound = numpy.log(self.times[action]) / self.action_counts[action]
+                confidence_bound = numpy.log(self.time) / self.action_counts[action]
                 confidence_bound = self.confidence * numpy.sqrt(confidence_bound)
                 next_value: float = self.value_model(next_state) + confidence_bound
             else:

@@ -14,7 +14,55 @@ agents: [
   policy: "UpperConfidenceBound",
   learning: "WeightedAveraging",
   kwargs: {
-    confidence: 5,
+    confidence: 0.1,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    confidence: 1,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    confidence: 10,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    confidence: 20,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    confidence: 50,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    confidence: 100,
+    learning_rate: 0.1,
+  }
+},
+{
+  policy: "UpperConfidenceBound",
+  learning: "WeightedAveraging",
+  kwargs: {
+    confidence: 1000,
     learning_rate: 0.1,
   }
 },
